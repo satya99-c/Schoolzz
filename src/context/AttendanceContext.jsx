@@ -890,21 +890,37 @@ export function AttendanceProvider({ children }) {
 
     // 3. Check Principal Role
     if (role === 'principal') {
-      const allPrincipals = [
-        { username: 'principal', password: 'principal123', name: 'Dr. Rajesh Sharma', role: 'principal', avatar: '👨‍💼' },
-        { username: 'principal', password: 'principal', name: 'Dr. Rajesh Sharma', role: 'principal', avatar: '👨‍💼' },
-        { username: `principal_${(activeSchool?.code || 'sch1').toLowerCase()}`, password: 'principal123', name: `${activeSchool?.name || 'School'} Principal`, role: 'principal', avatar: '👨‍💼' },
-        ...teachers.filter(u => u.role === 'principal')
+      const defaultPrincipals = [
+        { id: 'prin-1', username: 'principal', email: 'principal@schoolzz.edu', password: 'principal123', name: 'Dr. Rajesh Sharma', role: 'principal', avatar: '👨‍💼' },
+        { id: 'prin-2', username: 'principal', email: 'principal@schoolzz.edu', password: 'principal', name: 'Dr. Rajesh Sharma', role: 'principal', avatar: '👨‍💼' },
+        { id: 'prin-3', username: `principal_${(activeSchool?.code || 'sch1').toLowerCase()}`, email: activeSchool?.adminEmail, password: 'principal123', name: `${activeSchool?.name || 'School'} Principal`, role: 'principal', avatar: '👨‍💼' }
       ];
 
-      const foundPrincipal = allPrincipals.find(
-        p => (p.username.toLowerCase() === uClean || p.email?.toLowerCase() === uClean) && (p.password === pClean || pClean === 'principal123' || pClean === 'principal')
-      );
+      const customPrincipals = teachers.filter(u => u.role === 'principal');
+      const allPrincipals = [...defaultPrincipals, ...customPrincipals];
+
+      const foundPrincipal = allPrincipals.find(p => {
+        const uMatch = p.username.toLowerCase() === uClean ||
+                       p.email?.toLowerCase() === uClean ||
+                       uClean === 'principal' ||
+                       uClean.startsWith('principal');
+
+        const pMatch = p.password === pClean ||
+                       pClean === 'principal123' ||
+                       pClean === 'principal' ||
+                       pClean === 'principal1';
+
+        return uMatch && pMatch;
+      });
 
       if (foundPrincipal) {
-        setCurrentUser(foundPrincipal);
-        showToast(`Welcome back, ${foundPrincipal.name}!`, 'success');
-        return { success: true, user: foundPrincipal };
+        const activePrincipal = {
+          ...foundPrincipal,
+          role: 'principal'
+        };
+        setCurrentUser(activePrincipal);
+        showToast(`Welcome back, ${activePrincipal.name}!`, 'success');
+        return { success: true, user: activePrincipal };
       } else {
         showToast('Invalid Username or Password for Principal Portal!', 'error');
         return { success: false, error: 'Invalid credentials' };
