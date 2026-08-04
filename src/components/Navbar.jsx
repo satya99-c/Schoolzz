@@ -90,13 +90,9 @@ export default function Navbar({ onSwitchOrg }) {
               </button>
             </>
           ) : (
-            <button
-              onClick={onSwitchOrg}
-              className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-extrabold text-white bg-emerald-800/80 hover:bg-emerald-700 rounded-xl transition-all border border-emerald-500/40 cursor-pointer shadow-xs"
-            >
-              <Building2 className="w-3.5 h-3.5 text-emerald-300" />
-              <span>Switch School</span>
-            </button>
+            <div className="text-xs text-emerald-200 font-semibold font-mono bg-emerald-800/60 px-3 py-1 rounded-xl border border-emerald-500/40">
+              {activeSchool ? `${activeSchool.name} (${activeSchool.code})` : 'Official School Portal'}
+            </div>
           )}
         </div>
 

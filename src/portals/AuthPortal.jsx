@@ -50,25 +50,14 @@ export default function AuthPortal({ onSwitchOrg }) {
         <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-r from-[#1b4d3e] via-emerald-600 to-[#143c30]"></div>
 
         {/* Selected School Header Bar */}
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 flex items-center justify-between mt-2">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#1b4d3e] text-white flex items-center justify-center font-bold text-sm">
-              <School className="w-5 h-5 text-emerald-300" />
-            </div>
-            <div>
-              <span className="text-[10px] font-extrabold text-[#1b4d3e] uppercase tracking-wider block">Selected School</span>
-              <h2 className="text-xs font-black text-slate-900 leading-tight line-clamp-1">{schoolName} ({schoolCode})</h2>
-            </div>
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center space-x-3 mt-2 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-[#1b4d3e] text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+            <School className="w-5 h-5 text-emerald-300" />
           </div>
-
-          <button
-            type="button"
-            onClick={onSwitchOrg}
-            className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-[11px] flex items-center space-x-1 transition-all cursor-pointer shadow-xs flex-shrink-0"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 text-slate-500" />
-            <span>Switch School</span>
-          </button>
+          <div>
+            <span className="text-[10px] font-extrabold text-[#1b4d3e] uppercase tracking-wider block">Official School Portal</span>
+            <h2 className="text-sm font-black text-slate-900 leading-tight">{schoolName} ({schoolCode})</h2>
+          </div>
         </div>
 
         {/* Brand Header */}
