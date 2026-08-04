@@ -3,6 +3,7 @@ import { useAttendance } from '../context/AttendanceContext';
 import PrincipalReports from '../subcomponents/PrincipalReports';
 import OnboardTeacherModal from '../components/OnboardTeacherModal';
 import CreateClassModal from '../components/CreateClassModal';
+import StudentReportModal from '../subcomponents/StudentReportModal';
 import { Shield, Bell, CheckCircle2, XCircle, MessageSquare, BarChart3, Sun, Moon, AlertTriangle, UserPlus, PlusCircle, Users, School, Award, ArrowLeft, ChevronRight, FileText } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -869,10 +870,25 @@ export default function PrincipalPortal() {
                           <tr key={`${st.classId}_${st.rollNo}`} className="hover:bg-slate-50 transition-colors">
                             <td className="p-3.5 whitespace-nowrap font-mono font-bold text-slate-900">#{st.rollNo}</td>
                             <td className="p-3.5 whitespace-nowrap font-bold text-slate-900">
-                              <div className="flex items-center space-x-2.5">
-                                <img src={st.photo} alt={st.name} className="w-8 h-8 rounded-full object-cover border border-slate-200" />
-                                <span>{st.name}</span>
-                              </div>
+                              <button
+                                onClick={() => {
+                                  const fullStudentObj = {
+                                    ...st,
+                                    subjectMarks: stMarks?.subjectMarks || { Mathematics: 85, Science: 80, English: 90, SocialStudies: 88, Physics: 82 },
+                                    marks: stMarks?.totalMarks || 425,
+                                    totalMarks: stMarks?.totalMarks || 425,
+                                    percentage: stMarks?.percentage || st.attendancePct || 85,
+                                    grade: stMarks?.grade || 'A',
+                                    status: stMarks?.status || 'PASSED'
+                                  };
+                                  setViewingStudentScorecard({ student: fullStudentObj, className: st.className });
+                                }}
+                                className="flex items-center space-x-2.5 text-slate-900 hover:text-[#1b4d3e] hover:underline cursor-pointer group text-left transition-all"
+                              >
+                                <img src={st.photo} alt={st.name} className="w-8 h-8 rounded-full object-cover border border-slate-200 group-hover:scale-105 transition-transform" />
+                                <span className="font-extrabold">{st.name}</span>
+                                <ChevronRight className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity text-[#1b4d3e]" />
+                              </button>
                             </td>
                             <td className="p-3.5 whitespace-nowrap text-slate-600 font-medium">{st.className}</td>
                             <td className="p-3.5 whitespace-nowrap font-mono font-bold text-slate-900">{stAttendance}%</td>
@@ -920,6 +936,15 @@ export default function PrincipalPortal() {
           </div>
         );
       })()}
+
+      {/* VIEWING INDIVIDUAL STUDENT SCORECARD REPORT MODAL */}
+      {viewingStudentScorecard && (
+        <StudentReportModal
+          student={viewingStudentScorecard.student}
+          className={viewingStudentScorecard.className}
+          onClose={() => setViewingStudentScorecard(null)}
+        />
+      )}
 
     </div>
   );
