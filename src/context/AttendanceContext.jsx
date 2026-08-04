@@ -52,6 +52,7 @@ export function AttendanceProvider({ children }) {
     const found = schools.find(s => s.code.toUpperCase() === code.toUpperCase()) || DEFAULT_SCHOOLS.find(s => s.code.toUpperCase() === code.toUpperCase());
     if (found) {
       setActiveSchool(found);
+      setCurrentUser(null); // Always open the Login Page for the selected school!
       try {
         const newUrl = `${window.location.pathname}?school=${found.code}`;
         window.history.pushState({ path: newUrl }, '', newUrl);
@@ -92,7 +93,7 @@ export function AttendanceProvider({ children }) {
     });
 
     setActiveSchool(newSch);
-    localStorage.setItem('schoolzz_active_school', codeUpper);
+    setCurrentUser(null); // Always open the Login Page for newly registered school!
 
     return newSch;
   }, []);
