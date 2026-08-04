@@ -782,7 +782,7 @@ export default function PrincipalPortal() {
 
         return (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
-            <div className="bg-white rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-scale-up my-8">
+            <div className="bg-white rounded-3xl max-w-5xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6 animate-scale-up my-8">
               
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-200 pb-4">
@@ -792,12 +792,12 @@ export default function PrincipalPortal() {
                   </div>
                   <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="text-lg font-black text-slate-900">{tName}</h3>
+                      <h3 className="text-xl font-black text-slate-900">{tName}</h3>
                       <span className="bg-emerald-100 text-[#1b4d3e] text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-300">
                         Faculty Performance Overview
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 font-medium">
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
                       Username: <span className="font-mono font-bold text-slate-700">{selectedTeacherForPerformance.username || 'teacher'}</span> • Managing {assignedClassIds.length} Class Session(s)
                     </p>
                   </div>
@@ -805,34 +805,34 @@ export default function PrincipalPortal() {
 
                 <button
                   onClick={() => setSelectedTeacherForPerformance(null)}
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center transition-all cursor-pointer"
+                  className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center transition-all cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
 
               {/* Quick Metrics Bar */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-center">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Assigned Classes</span>
-                  <span className="text-base font-black text-[#1b4d3e]">{assignedClassIds.length} Classes</span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-center shadow-xs">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Assigned Classes</span>
+                  <span className="text-lg font-black text-[#1b4d3e]">{assignedClassIds.length} Classes</span>
                 </div>
 
-                <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-center">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Students</span>
-                  <span className="text-base font-black text-slate-900">{teacherStudents.length} Enrolled</span>
+                <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-center shadow-xs">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Total Students</span>
+                  <span className="text-lg font-black text-slate-900">{teacherStudents.length} Enrolled</span>
                 </div>
 
-                <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-center">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Avg Attendance Rate</span>
-                  <span className={`text-base font-black ${avgAttendancePct >= 80 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-center shadow-xs">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Avg Attendance Rate</span>
+                  <span className={`text-lg font-black ${avgAttendancePct >= 80 ? 'text-emerald-700' : 'text-rose-700'}`}>
                     {avgAttendancePct}%
                   </span>
                 </div>
 
-                <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-center">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Academic Pass Rate</span>
-                  <span className="text-base font-black text-emerald-700">{passRatePct}% Passed</span>
+                <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-center shadow-xs">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Academic Pass Rate</span>
+                  <span className="text-lg font-black text-emerald-700">{passRatePct}% Passed</span>
                 </div>
               </div>
 
@@ -843,20 +843,20 @@ export default function PrincipalPortal() {
                     <Users className="w-4 h-4 text-[#1b4d3e]" />
                     <span>Students Performance Directory ({teacherStudents.length})</span>
                   </h4>
-                  <span className="text-[10px] text-slate-500 font-medium">Eligibility: ≥80% Attendance Required</span>
+                  <span className="text-[10px] text-slate-500 font-medium">Eligibility Threshold: ≥80% Attendance</span>
                 </div>
 
-                <div className="overflow-x-auto max-h-[360px] overflow-y-auto border border-slate-200 rounded-2xl">
+                <div className="overflow-x-auto max-h-[400px] overflow-y-auto border border-slate-200 rounded-2xl shadow-sm">
                   <table className="w-full text-left text-xs text-slate-700">
                     <thead className="bg-slate-100 text-slate-600 uppercase font-semibold text-[10px] sticky top-0 z-10">
                       <tr>
-                        <th className="p-3">Roll #</th>
-                        <th className="p-3">Student Name</th>
-                        <th className="p-3">Class</th>
-                        <th className="p-3">Attendance %</th>
-                        <th className="p-3">Eligibility</th>
-                        <th className="p-3">Exam Score</th>
-                        <th className="p-3 text-right">Academic Status</th>
+                        <th className="p-3.5 whitespace-nowrap">Roll #</th>
+                        <th className="p-3.5 whitespace-nowrap">Student Name</th>
+                        <th className="p-3.5 whitespace-nowrap">Class</th>
+                        <th className="p-3.5 whitespace-nowrap">Attendance %</th>
+                        <th className="p-3.5 whitespace-nowrap">Eligibility</th>
+                        <th className="p-3.5 whitespace-nowrap">Exam Score</th>
+                        <th className="p-3.5 whitespace-nowrap text-right">Academic Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 font-medium bg-white">
@@ -867,17 +867,17 @@ export default function PrincipalPortal() {
 
                         return (
                           <tr key={`${st.classId}_${st.rollNo}`} className="hover:bg-slate-50 transition-colors">
-                            <td className="p-3 font-mono font-bold text-slate-900">#{st.rollNo}</td>
-                            <td className="p-3 font-bold text-slate-900">
-                              <div className="flex items-center space-x-2">
-                                <img src={st.photo} alt={st.name} className="w-7 h-7 rounded-full object-cover border border-slate-200" />
+                            <td className="p-3.5 whitespace-nowrap font-mono font-bold text-slate-900">#{st.rollNo}</td>
+                            <td className="p-3.5 whitespace-nowrap font-bold text-slate-900">
+                              <div className="flex items-center space-x-2.5">
+                                <img src={st.photo} alt={st.name} className="w-8 h-8 rounded-full object-cover border border-slate-200" />
                                 <span>{st.name}</span>
                               </div>
                             </td>
-                            <td className="p-3 text-slate-600 font-medium">{st.className}</td>
-                            <td className="p-3 font-mono font-bold text-slate-900">{stAttendance}%</td>
-                            <td className="p-3">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                            <td className="p-3.5 whitespace-nowrap text-slate-600 font-medium">{st.className}</td>
+                            <td className="p-3.5 whitespace-nowrap font-mono font-bold text-slate-900">{stAttendance}%</td>
+                            <td className="p-3.5 whitespace-nowrap">
+                              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md border inline-block ${
                                 isEligible
                                   ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                                   : 'bg-rose-100 text-rose-800 border-rose-300'
@@ -885,18 +885,18 @@ export default function PrincipalPortal() {
                                 {isEligible ? 'Eligible' : 'Low Attendance'}
                               </span>
                             </td>
-                            <td className="p-3 font-mono font-bold">
+                            <td className="p-3.5 whitespace-nowrap font-mono font-bold">
                               {stMarks ? `${stMarks.totalMarks} / 500 (${stMarks.percentage}%)` : <span className="text-slate-400 font-normal italic">Pending</span>}
                             </td>
-                            <td className="p-3 text-right">
+                            <td className="p-3.5 whitespace-nowrap text-right">
                               {stMarks ? (
-                                <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                                <span className={`text-[10px] font-extrabold px-3 py-1 rounded-full border inline-block ${
                                   stMarks.status === 'PASSED' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-rose-100 text-rose-800 border-rose-300'
                                 }`}>
                                   Grade {stMarks.grade} • {stMarks.status}
                                 </span>
                               ) : (
-                                <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Pending</span>
+                                <span className="text-[10px] text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md">Pending</span>
                               )}
                             </td>
                           </tr>
@@ -910,7 +910,7 @@ export default function PrincipalPortal() {
               <div className="pt-2 flex justify-end">
                 <button
                   onClick={() => setSelectedTeacherForPerformance(null)}
-                  className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs transition-all cursor-pointer border border-slate-300"
                 >
                   Close Performance View
                 </button>
