@@ -111,19 +111,8 @@ export function AttendanceProvider({ children }) {
     return INITIAL_CLASSES;
   });
 
-  // Current logged in user (defaults to null so users MUST log in first!)
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('schoolzz_user');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('schoolzz_user', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('schoolzz_user');
-    }
-  }, [currentUser]);
+  // Current logged in user (ALWAYS defaults to null on page load so shareable links ALWAYS display the Login Page!)
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [activeClassId, setActiveClassId] = useState('10-A');
 
