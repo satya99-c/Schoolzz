@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useAttendance } from '../context/AttendanceContext';
+import { useAttendance, getDefaultSchools } from '../context/AttendanceContext';
 import { School, PlusCircle, CheckCircle, Copy, ArrowRight, Shield, MapPin, Mail, Sparkles, Building2, User, KeyRound } from 'lucide-react';
 
 export default function OrgPortal({ onSelectSchool }) {
   const { schools = [], activeSchool, selectSchool, registerSchool, showToast } = useAttendance();
+  const displaySchools = (schools && Array.isArray(schools) && schools.length > 0) ? schools : getDefaultSchools();
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   // New School Form State
@@ -86,7 +87,7 @@ export default function OrgPortal({ onSelectSchool }) {
 
         {/* Schools Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {schools.map((sch) => {
+          {displaySchools.map((sch) => {
             const isSelected = activeSchool?.code === sch.code;
             const shareableUrl = `${window.location.origin}/?school=${sch.code}`;
 

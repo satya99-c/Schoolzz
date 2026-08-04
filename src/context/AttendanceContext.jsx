@@ -2,26 +2,30 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { INITIAL_CLASSES, INITIAL_STUDENTS, MOCK_USERS } from '../data/mockData';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
-export const DEFAULT_SCHOOLS = [
-  {
-    code: 'SCH1',
-    name: 'Sunshine International School (School 1)',
-    city: 'New Delhi',
-    adminName: 'Super Admin',
-    adminEmail: 'admin@school1.edu',
-    adminPassword: 'admin123',
-    hasData: true
-  },
-  {
-    code: 'SCH2',
-    name: 'Green Valley Academy (School 2)',
-    city: 'Mumbai',
-    adminName: 'School 2 Admin',
-    adminEmail: 'admin@greenvalley.edu',
-    adminPassword: 'admin123',
-    hasData: false
-  }
-];
+export function getDefaultSchools() {
+  return [
+    {
+      code: 'SCH1',
+      name: 'Sunshine International School (School 1)',
+      city: 'New Delhi',
+      adminName: 'Super Admin',
+      adminEmail: 'admin@school1.edu',
+      adminPassword: 'admin123',
+      hasData: true
+    },
+    {
+      code: 'SCH2',
+      name: 'Green Valley Academy (School 2)',
+      city: 'Mumbai',
+      adminName: 'School 2 Admin',
+      adminEmail: 'admin@greenvalley.edu',
+      adminPassword: 'admin123',
+      hasData: false
+    }
+  ];
+}
+
+export const DEFAULT_SCHOOLS = getDefaultSchools();
 
 const AttendanceContext = createContext();
 
@@ -35,7 +39,7 @@ export function AttendanceProvider({ children }) {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {}
-    return DEFAULT_SCHOOLS;
+    return getDefaultSchools();
   });
 
   // Active School Selection (Defaults to null on base URL to display Organization Portal)
@@ -52,7 +56,8 @@ export function AttendanceProvider({ children }) {
             if (Array.isArray(parsed)) savedSchools = parsed;
           } catch (e) {}
         }
-        const allAvailableSchools = [...savedSchools, ...DEFAULT_SCHOOLS];
+        const defaultSchs = getDefaultSchools();
+        const allAvailableSchools = [...savedSchools, ...defaultSchs];
 
         const found = allAvailableSchools.find(s => s.code.toUpperCase() === paramCode.toUpperCase());
         if (found) return found;
@@ -68,7 +73,8 @@ export function AttendanceProvider({ children }) {
   }, [schools]);
 
   const selectSchool = useCallback((code) => {
-    const found = schools.find(s => s.code.toUpperCase() === code.toUpperCase()) || DEFAULT_SCHOOLS.find(s => s.code.toUpperCase() === code.toUpperCase());
+    const defaultSchs = getDefaultSchools();
+    const found = schools.find(s => s.code.toUpperCase() === code.toUpperCase()) || defaultSchs.find(s => s.code.toUpperCase() === code.toUpperCase());
     if (found) {
       setActiveSchool(found);
       setCurrentUser(null); // Always open the Login Page for the selected school!
