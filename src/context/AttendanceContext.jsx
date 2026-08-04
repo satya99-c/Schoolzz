@@ -38,7 +38,11 @@ export function AttendanceProvider({ children }) {
     const params = new URLSearchParams(window.location.search);
     const paramCode = params.get('school');
     if (paramCode) {
-      const found = DEFAULT_SCHOOLS.find(s => s.code.toUpperCase() === paramCode.toUpperCase());
+      const savedSchoolsStr = localStorage.getItem('schoolzz_schools');
+      const savedSchools = savedSchoolsStr ? JSON.parse(savedSchoolsStr) : [];
+      const allAvailableSchools = [...savedSchools, ...DEFAULT_SCHOOLS];
+
+      const found = allAvailableSchools.find(s => s.code.toUpperCase() === paramCode.toUpperCase());
       if (found) return found;
     }
     return null;
