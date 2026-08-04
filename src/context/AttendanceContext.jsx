@@ -33,32 +33,31 @@ export function AttendanceProvider({ children }) {
     return DEFAULT_SCHOOLS;
   });
 
-  // Active School Selection
+  // Active School Selection (Defaults to null on base URL to display Organization Portal)
   const [activeSchool, setActiveSchool] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const paramCode = params.get('school');
-    const savedCode = localStorage.getItem('schoolzz_active_school');
-    const targetCode = paramCode || savedCode || 'SCH1';
-    
-    const found = DEFAULT_SCHOOLS.find(s => s.code === targetCode);
-    return found || DEFAULT_SCHOOLS[0];
+    if (paramCode) {
+      const found = DEFAULT_SCHOOLS.find(s => s.code.toUpperCase() === paramCode.toUpperCase());
+      if (found) return found;
+    }
+    return null;
   });
 
   useEffect(() => {
     localStorage.setItem('schoolzz_schools', JSON.stringify(schools));
   }, [schools]);
 
-  useEffect(() => {
-    if (activeSchool) {
-      localStorage.setItem('schoolzz_active_school', activeSchool.code);
-    }
-  }, [activeSchool]);
-
   const selectSchool = useCallback((code) => {
-    const found = schools.find(s => s.code === code) || DEFAULT_SCHOOLS.find(s => s.code === code);
+    const found = schools.find(s => s.code.toUpperCase() === code.toUpperCase()) || DEFAULT_SCHOOLS.find(s => s.code.toUpperCase() === code.toUpperCase());
     if (found) {
       setActiveSchool(found);
-      localStorage.setItem('schoolzz_active_school', found.code);
+      try {
+        const newUrl = `${window.location.pathname}?school=${found.code}`;
+        window.history.pushState({ path: newUrl }, '', newUrl);
+      } catch (e) {
+        // Fallback for non-browser envs
+      }
     }
   }, [schools]);
 
