@@ -28,28 +28,43 @@ const AttendanceContext = createContext();
 export function AttendanceProvider({ children }) {
   // Schools State
   const [schools, setSchools] = useState(() => {
-    const saved = localStorage.getItem('schoolzz_schools');
-    if (saved) return JSON.parse(saved);
+    try {
+      const saved = localStorage.getItem('schoolzz_schools');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
     return DEFAULT_SCHOOLS;
   });
 
   // Active School Selection (Defaults to null on base URL to display Organization Portal)
   const [activeSchool, setActiveSchool] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    const paramCode = params.get('school');
-    if (paramCode) {
-      const savedSchoolsStr = localStorage.getItem('schoolzz_schools');
-      const savedSchools = savedSchoolsStr ? JSON.parse(savedSchoolsStr) : [];
-      const allAvailableSchools = [...savedSchools, ...DEFAULT_SCHOOLS];
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const paramCode = params.get('school');
+      if (paramCode) {
+        const savedSchoolsStr = localStorage.getItem('schoolzz_schools');
+        let savedSchools = [];
+        if (savedSchoolsStr) {
+          try {
+            const parsed = JSON.parse(savedSchoolsStr);
+            if (Array.isArray(parsed)) savedSchools = parsed;
+          } catch (e) {}
+        }
+        const allAvailableSchools = [...savedSchools, ...DEFAULT_SCHOOLS];
 
-      const found = allAvailableSchools.find(s => s.code.toUpperCase() === paramCode.toUpperCase());
-      if (found) return found;
-    }
+        const found = allAvailableSchools.find(s => s.code.toUpperCase() === paramCode.toUpperCase());
+        if (found) return found;
+      }
+    } catch (e) {}
     return null;
   });
 
   useEffect(() => {
-    localStorage.setItem('schoolzz_schools', JSON.stringify(schools));
+    try {
+      localStorage.setItem('schoolzz_schools', JSON.stringify(schools));
+    } catch (e) {}
   }, [schools]);
 
   const selectSchool = useCallback((code) => {
@@ -104,15 +119,25 @@ export function AttendanceProvider({ children }) {
 
   // Teachers state
   const [teachers, setTeachers] = useState(() => {
-    const saved = localStorage.getItem('schoolzz_teachers');
-    if (saved) return JSON.parse(saved);
+    try {
+      const saved = localStorage.getItem('schoolzz_teachers');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
     return MOCK_USERS.filter(u => u.role === 'teacher');
   });
 
   // Classes state
   const [classes, setClasses] = useState(() => {
-    const saved = localStorage.getItem('schoolzz_classes');
-    if (saved) return JSON.parse(saved);
+    try {
+      const saved = localStorage.getItem('schoolzz_classes');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
     return INITIAL_CLASSES;
   });
 
@@ -122,23 +147,38 @@ export function AttendanceProvider({ children }) {
   const [activeClassId, setActiveClassId] = useState('10-A');
 
   const [students, setStudents] = useState(() => {
-    const saved = localStorage.getItem('schoolzz_students');
-    if (!saved) return INITIAL_STUDENTS;
-    const parsed = JSON.parse(saved);
-    if (!parsed['10-A_morning'] || parsed['10-A_morning'].length < 15) {
-      return INITIAL_STUDENTS;
-    }
-    return parsed;
+    try {
+      const saved = localStorage.getItem('schoolzz_students');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && parsed['10-A_morning'] && Array.isArray(parsed['10-A_morning']) && parsed['10-A_morning'].length >= 15) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return INITIAL_STUDENTS;
   });
 
   const [submissions, setSubmissions] = useState(() => {
-    const saved = localStorage.getItem('schoolzz_submissions');
-    return saved ? JSON.parse(saved) : {};
+    try {
+      const saved = localStorage.getItem('schoolzz_submissions');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (e) {}
+    return {};
   });
 
   const [dbReports, setDbReports] = useState(() => {
-    const saved = localStorage.getItem('schoolzz_reports');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('schoolzz_reports');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return [];
   });
 
   const [whatsappLogs, setWhatsappLogs] = useState(() => {
