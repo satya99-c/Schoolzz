@@ -1,23 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AttendanceProvider, useAttendance } from './context/AttendanceContext';
 import Navbar from './components/Navbar';
+import OrgPortal from './portals/OrgPortal';
 import AuthPortal from './portals/AuthPortal';
+import SchoolAdminPortal from './portals/SchoolAdminPortal';
 import TeacherPortal from './portals/TeacherPortal';
 import PrincipalPortal from './portals/PrincipalPortal';
 import StudentPortal from './portals/StudentPortal';
 import WhatsAppModal from './components/WhatsAppModal';
 import ApprovalSuccessModal from './components/ApprovalSuccessModal';
-import { CheckCircle2, AlertTriangle, Info, X } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 
 function MainAppContent() {
-  const { currentUser, toast } = useAttendance();
+  const { currentUser, toast, activeSchool } = useAttendance();
+  const [showOrgPortal, setShowOrgPortal] = useState(false);
 
   const renderActivePortal = () => {
+    // If explicit Switch School requested or no active school selected
+    if (showOrgPortal || !activeSchool) {
+      return (
+        <OrgPortal
+          onSelectSchool={() => setShowOrgPortal(false)}
+        />
+      );
+    }
+
     if (!currentUser) {
-      return <AuthPortal />;
+      return (
+        <AuthPortal
+          onSwitchOrg={() => setShowOrgPortal(true)}
+        />
+      );
     }
 
     switch (currentUser.role) {
+      case 'admin':
+        return <SchoolAdminPortal />;
       case 'teacher':
         return <TeacherPortal />;
       case 'principal':
@@ -25,13 +43,17 @@ function MainAppContent() {
       case 'student':
         return <StudentPortal />;
       default:
-        return <AuthPortal />;
+        return (
+          <AuthPortal
+            onSwitchOrg={() => setShowOrgPortal(true)}
+          />
+        );
     }
   };
 
   return (
     <div className="min-h-screen bg-[#f0f4f2] text-slate-800 flex flex-col font-sans relative overflow-x-hidden">
-      <Navbar />
+      <Navbar onSwitchOrg={() => setShowOrgPortal(true)} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {renderActivePortal()}
@@ -63,8 +85,8 @@ function MainAppContent() {
 
       {/* Modern Footer */}
       <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500 space-y-1 shadow-inner">
-        <p className="font-semibold text-slate-700">Schoolzz Smart Attendance System &copy; 2026. All rights reserved.</p>
-        <p className="text-[10px] text-slate-500">Built with React, Vite, Tailwind CSS & WhatsApp SMS Automation Engine.</p>
+        <p className="font-semibold text-slate-700">Schoolzz Multi-Tenant School System &copy; 2026. All rights reserved.</p>
+        <p className="text-[10px] text-slate-500">Supporting Multi-School Organization Hub, Teacher, Principal & Student Portals.</p>
       </footer>
     </div>
   );

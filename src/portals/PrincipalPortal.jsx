@@ -201,6 +201,18 @@ export default function PrincipalPortal() {
           <Award className="w-4 h-4" />
           <span>Academic Scorecards & Marks</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('student_logins')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 whitespace-nowrap cursor-pointer ${
+            activeTab === 'student_logins'
+              ? 'bg-[#1b4d3e] text-white shadow-md'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <GraduationCap className="w-4 h-4" />
+          <span>Student ID Logins Roster</span>
+        </button>
       </div>
 
       {/* TAB 1: PENDING APPROVALS */}
@@ -731,6 +743,72 @@ export default function PrincipalPortal() {
           </div>
         );
       })()}
+
+      {/* TAB: STUDENT UNIQUE ID LOGINS ROSTER */}
+      {activeTab === 'student_logins' && (
+        <div className="space-y-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-base font-extrabold text-slate-900 flex items-center space-x-2">
+                <GraduationCap className="w-5 h-5 text-[#1b4d3e]" />
+                <span>Student Unique ID & Login Credentials Roster</span>
+              </h2>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Students log in using their unique auto-generated Student ID as both Username and Password to view digital scorecards and attendance records.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-md overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-700">
+              <thead className="bg-slate-100 text-slate-600 uppercase font-semibold text-[10px]">
+                <tr>
+                  <th className="p-3.5">Roll #</th>
+                  <th className="p-3.5">Student Name</th>
+                  <th className="p-3.5">Class</th>
+                  <th className="p-3.5">Student ID (Username)</th>
+                  <th className="p-3.5">Default Password</th>
+                  <th className="p-3.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 font-medium bg-white">
+                {Object.entries(students).flatMap(([cId, stList]) => {
+                  const clsObj = classes.find(c => c.id === cId) || { name: cId };
+                  return stList.map(st => {
+                    const studentId = st.studentId || `${activeSchool?.code || 'SCH1'}-STU-${st.rollNo}`;
+                    return (
+                      <tr key={`${cId}_${st.rollNo}`} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-3.5 font-mono font-bold text-slate-900">#{st.rollNo}</td>
+                        <td className="p-3.5 font-bold text-slate-900">
+                          <div className="flex items-center space-x-2.5">
+                            <img src={st.photo} alt={st.name} className="w-7 h-7 rounded-full object-cover border border-slate-200" />
+                            <span>{st.name}</span>
+                          </div>
+                        </td>
+                        <td className="p-3.5 text-slate-600 font-medium">{clsObj.name}</td>
+                        <td className="p-3.5 font-mono font-extrabold text-[#1b4d3e]">{studentId}</td>
+                        <td className="p-3.5 font-mono text-slate-700">{studentId}</td>
+                        <td className="p-3.5 text-right">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`Username: ${studentId}\nPassword: ${studentId}`);
+                              showToast(`Copied login credentials for ${st.name}!`, 'success');
+                            }}
+                            className="px-3 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#1b4d3e] font-bold text-[11px] border border-emerald-200 transition-all cursor-pointer inline-flex items-center space-x-1"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy Login Credentials</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  });
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* ONBOARD TEACHER MODAL */}
       {showOnboardModal && (
