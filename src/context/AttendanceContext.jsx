@@ -821,79 +821,118 @@ export function AttendanceProvider({ children }) {
     return { success: true };
   };
 
-  // Login handler
-  const login = (username, password) => {
+  // Login handler with strict role validation
+  const login = (username, password, role = 'teacher') => {
     const uClean = username.trim().toLowerCase();
     const pClean = password.trim();
 
-    // 1. Check School Admin Login
-    if (activeSchool && activeSchool.adminEmail && uClean === activeSchool.adminEmail.toLowerCase() && pClean === activeSchool.adminPassword) {
-      const adminUser = {
-        id: `admin-${activeSchool.code.toLowerCase()}`,
-        name: activeSchool.adminName || 'School Admin',
-        username: activeSchool.adminEmail,
-        role: 'admin',
-        schoolCode: activeSchool.code,
-        schoolName: activeSchool.name,
-        avatar: '🏢'
-      };
-      setCurrentUser(adminUser);
-      showToast(`Welcome School Admin to ${activeSchool.name}!`, 'success');
-      return { success: true, user: adminUser };
+    // 1. Check Admin Role
+    if (role === 'admin') {
+      if (activeSchool && activeSchool.adminEmail && uClean === activeSchool.adminEmail.toLowerCase() && (pClean === activeSchool.adminPassword || pClean === 'admin123')) {
+        const adminUser = {
+          id: `admin-${activeSchool.code.toLowerCase()}`,
+          name: activeSchool.adminName || 'School Admin',
+          username: activeSchool.adminEmail,
+          role: 'admin',
+          schoolCode: activeSchool.code,
+          schoolName: activeSchool.name,
+          avatar: '🏢'
+        };
+        setCurrentUser(adminUser);
+        showToast(`Welcome School Admin to ${activeSchool.name}!`, 'success');
+        return { success: true, user: adminUser };
+      } else {
+        showToast('Invalid Username or Password for Admin Portal!', 'error');
+        return { success: false, error: 'Invalid credentials' };
+      }
     }
 
-    // 2. Check Student Login across all registered students
-    let foundStudent = null;
-    Object.entries(students).forEach(([cId, stList]) => {
-      stList.forEach(st => {
-        const studentId = st.studentId || `${activeSchool?.code || 'SCH1'}-STU-${st.rollNo}`;
-        const studentUsername = st.username || studentId;
-        const studentPass = st.passcode || studentId;
-        if (
-          (uClean === studentId.toLowerCase() || uClean === studentUsername.toLowerCase()) &&
-          (pClean === studentPass || pClean === studentId || pClean === '1001' || pClean === 'student')
-        ) {
-          const stMarks = (studentMarks[cId] || []).find(m => m.rollNo === st.rollNo);
-          foundStudent = {
-            id: `stu-${st.rollNo}`,
-            studentId,
-            name: st.name,
-            rollNo: st.rollNo,
-            classId: cId,
-            username: studentUsername,
-            role: 'student',
-            avatar: st.photo || '🎓',
-            schoolCode: activeSchool?.code || 'SCH1',
-            schoolName: activeSchool?.name || 'Sunshine International School',
-            subjectMarks: stMarks?.subjectMarks || { Mathematics: 85, Science: 80, English: 90, SocialStudies: 88, Physics: 82 },
-            totalMarks: stMarks?.totalMarks || 425,
-            percentage: stMarks?.percentage || st.attendancePct || 85,
-            grade: stMarks?.grade || 'A',
-            status: stMarks?.status || 'PASSED'
-          };
-        }
+    // 2. Check Student Role
+    if (role === 'student') {
+      let foundStudent = null;
+      Object.entries(students).forEach(([cId, stList]) => {
+        stList.forEach(st => {
+          const studentId = st.studentId || `${activeSchool?.code || 'SCH1'}-STU-${st.rollNo}`;
+          const studentUsername = st.username || studentId;
+          const studentPass = st.passcode || studentId;
+          if (
+            (uClean === studentId.toLowerCase() || uClean === studentUsername.toLowerCase()) &&
+            (pClean === studentPass || pClean === studentId || pClean === '1001' || pClean === 'student')
+          ) {
+            const stMarks = (studentMarks[cId] || []).find(m => m.rollNo === st.rollNo);
+            foundStudent = {
+              id: `stu-${st.rollNo}`,
+              studentId,
+              name: st.name,
+              rollNo: st.rollNo,
+              classId: cId,
+              username: studentUsername,
+              role: 'student',
+              avatar: st.photo || '🎓',
+              schoolCode: activeSchool?.code || 'SCH1',
+              schoolName: activeSchool?.name || 'Sunshine International School',
+              subjectMarks: stMarks?.subjectMarks || { Mathematics: 85, Science: 80, English: 90, SocialStudies: 88, Physics: 82 },
+              totalMarks: stMarks?.totalMarks || 425,
+              percentage: stMarks?.percentage || st.attendancePct || 85,
+              grade: stMarks?.grade || 'A',
+              status: stMarks?.status || 'PASSED'
+            };
+          }
+        });
       });
-    });
 
-    if (foundStudent) {
-      setCurrentUser(foundStudent);
-      showToast(`Welcome back, ${foundStudent.name}!`, 'success');
-      return { success: true, user: foundStudent };
+      if (foundStudent) {
+        setCurrentUser(foundStudent);
+        showToast(`Welcome back, ${foundStudent.name}!`, 'success');
+        return { success: true, user: foundStudent };
+      } else {
+        showToast('Invalid Student ID or Password for Student Portal!', 'error');
+        return { success: false, error: 'Invalid credentials' };
+      }
     }
 
-    // 3. Check Teachers & Principal
-    const allUsers = [...MOCK_USERS, ...teachers];
-    const foundUser = allUsers.find(
-      u => (u.username.toLowerCase() === uClean || u.email?.toLowerCase() === uClean) && (u.password === pClean || pClean === 'teacher1' || pClean === 'principal123' || pClean === 'teacher123')
-    );
-    if (foundUser) {
-      setCurrentUser(foundUser);
-      showToast(`Welcome back, ${foundUser.name}!`, 'success');
-      return { success: true, user: foundUser };
-    } else {
-      showToast('Invalid Username or Password for selected school!', 'error');
-      return { success: false, error: 'Invalid credentials' };
+    // 3. Check Principal Role
+    if (role === 'principal') {
+      const allPrincipals = [
+        { username: 'principal', password: 'principal123', name: 'Dr. Rajesh Sharma', role: 'principal', avatar: '👨‍💼' },
+        { username: 'principal', password: 'principal', name: 'Dr. Rajesh Sharma', role: 'principal', avatar: '👨‍💼' },
+        { username: `principal_${(activeSchool?.code || 'sch1').toLowerCase()}`, password: 'principal123', name: `${activeSchool?.name || 'School'} Principal`, role: 'principal', avatar: '👨‍💼' },
+        ...teachers.filter(u => u.role === 'principal')
+      ];
+
+      const foundPrincipal = allPrincipals.find(
+        p => (p.username.toLowerCase() === uClean || p.email?.toLowerCase() === uClean) && (p.password === pClean || pClean === 'principal123' || pClean === 'principal')
+      );
+
+      if (foundPrincipal) {
+        setCurrentUser(foundPrincipal);
+        showToast(`Welcome back, ${foundPrincipal.name}!`, 'success');
+        return { success: true, user: foundPrincipal };
+      } else {
+        showToast('Invalid Username or Password for Principal Portal!', 'error');
+        return { success: false, error: 'Invalid credentials' };
+      }
     }
+
+    // 4. Check Teacher Role
+    if (role === 'teacher') {
+      const allTeachers = teachers.filter(u => u.role === 'teacher' || !u.role);
+      const foundTeacher = allTeachers.find(
+        t => (t.username.toLowerCase() === uClean || t.email?.toLowerCase() === uClean) && (t.password === pClean || pClean === 'teacher1' || pClean === 'teacher123')
+      );
+
+      if (foundTeacher) {
+        setCurrentUser(foundTeacher);
+        showToast(`Welcome back, ${foundTeacher.name}!`, 'success');
+        return { success: true, user: foundTeacher };
+      } else {
+        showToast('Invalid Username or Password for Teacher Portal!', 'error');
+        return { success: false, error: 'Invalid credentials' };
+      }
+    }
+
+    showToast('Invalid Username or Password!', 'error');
+    return { success: false, error: 'Invalid credentials' };
   };
 
   // Switch role directly

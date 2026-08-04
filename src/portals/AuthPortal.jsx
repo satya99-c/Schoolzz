@@ -14,7 +14,7 @@ export default function AuthPortal({ onSwitchOrg }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    login(username, password);
+    login(username, password, activeTab);
   };
 
   const handleTabChange = (role) => {
@@ -39,7 +39,7 @@ export default function AuthPortal({ onSwitchOrg }) {
     setUsername(roleUser);
     setPassword(rolePass);
     setActiveTab(roleName);
-    login(roleUser, rolePass);
+    login(roleUser, rolePass, roleName);
   };
 
   return (
