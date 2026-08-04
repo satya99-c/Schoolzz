@@ -4,11 +4,11 @@ import PrincipalReports from '../subcomponents/PrincipalReports';
 import OnboardTeacherModal from '../components/OnboardTeacherModal';
 import CreateClassModal from '../components/CreateClassModal';
 import StudentReportModal from '../subcomponents/StudentReportModal';
-import { Shield, Bell, CheckCircle2, XCircle, MessageSquare, BarChart3, Sun, Moon, AlertTriangle, UserPlus, PlusCircle, Users, School, Award, ArrowLeft, ChevronRight, FileText } from 'lucide-react';
+import { Shield, Bell, CheckCircle2, XCircle, MessageSquare, BarChart3, Sun, Moon, AlertTriangle, UserPlus, PlusCircle, Users, School, Award, ArrowLeft, ChevronRight, FileText, Copy, GraduationCap } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function PrincipalPortal() {
-  const { classes, teachers, students, submissions, approveAttendance, declineAttendance, whatsappLogs, setActiveWhatsAppPreview, leaveApplications = [], approveLeaveApplication, declineLeaveApplication, attendanceReminders = [], triggerManualReminder, studentMarks } = useAttendance();
+  const { classes, teachers, students, submissions, approveAttendance, declineAttendance, whatsappLogs, setActiveWhatsAppPreview, leaveApplications = [], approveLeaveApplication, declineLeaveApplication, attendanceReminders = [], triggerManualReminder, studentMarks, showToast, activeSchool } = useAttendance();
   const [activeTab, setActiveTab] = useState('approvals'); // 'approvals' | 'overview' | 'manage' | 'whatsapp' | 'reports' | 'marks'
 
   // Principal Marks View State
