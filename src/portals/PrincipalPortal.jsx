@@ -14,6 +14,9 @@ export default function PrincipalPortal() {
   const [selectedPrincipalMarksClassId, setSelectedPrincipalMarksClassId] = useState(null);
   const [viewingStudentScorecard, setViewingStudentScorecard] = useState(null);
 
+  // Teacher Performance Modal State
+  const [selectedTeacherForPerformance, setSelectedTeacherForPerformance] = useState(null);
+
   // Modal triggers
   const [showOnboardModal, setShowOnboardModal] = useState(false);
   const [showCreateClassModal, setShowCreateClassModal] = useState(false);
@@ -389,45 +392,61 @@ export default function PrincipalPortal() {
               const isOccupied = assignedCount >= 2;
 
               return (
-                <div key={teacher.id} className="bg-white border border-slate-200 rounded-3xl p-5 space-y-3 shadow-md relative">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-2xl flex items-center justify-center border border-emerald-200">
-                        {teacher.avatar}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-900">{teacher.name}</h3>
-                        <div className="text-[11px] text-slate-500">
-                          Username: <span className="font-mono text-[#1b4d3e] font-semibold">{teacher.username}</span>
+                <div key={teacher.id} className="bg-white border border-slate-200 rounded-3xl p-5 space-y-3 shadow-md relative hover:border-[#1b4d3e] transition-all flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div
+                        onClick={() => setSelectedTeacherForPerformance(teacher)}
+                        className="flex items-center space-x-3 cursor-pointer group"
+                      >
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-2xl flex items-center justify-center border border-emerald-200 group-hover:scale-105 transition-transform">
+                          {teacher.avatar}
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-[#1b4d3e] group-hover:underline flex items-center space-x-1">
+                            <span>{teacher.name}</span>
+                            <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-[#1b4d3e]" />
+                          </h3>
+                          <div className="text-[11px] text-slate-500">
+                            Username: <span className="font-mono text-[#1b4d3e] font-semibold">{teacher.username}</span>
+                          </div>
                         </div>
                       </div>
+
+                      {isOccupied ? (
+                        <span className="bg-rose-100 text-rose-800 border border-rose-300 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                          ⚠️ Occupied ({assignedCount}/2)
+                        </span>
+                      ) : (
+                        <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                          ✓ Available ({assignedCount}/2)
+                        </span>
+                      )}
                     </div>
 
-                    {isOccupied ? (
-                      <span className="bg-rose-100 text-rose-800 border border-rose-300 text-[10px] font-bold px-2.5 py-1 rounded-full">
-                        ⚠️ Occupied ({assignedCount}/2)
-                      </span>
-                    ) : (
-                      <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-full">
-                        ✓ Available ({assignedCount}/2)
-                      </span>
-                    )}
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1 text-xs">
+                      <div className="text-[10px] text-slate-500 font-bold uppercase">Assigned Classes:</div>
+                      {teacher.assignedClasses && teacher.assignedClasses.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {teacher.assignedClasses.map(cId => (
+                            <span key={cId} className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                              {cId}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-[11px] text-slate-400 italic">No classes assigned yet</div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1 text-xs">
-                    <div className="text-[10px] text-slate-500 font-bold uppercase">Assigned Classes:</div>
-                    {teacher.assignedClasses && teacher.assignedClasses.length > 0 ? (
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {teacher.assignedClasses.map(cId => (
-                          <span key={cId} className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-lg">
-                            {cId}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-[11px] text-slate-400 italic">No classes assigned yet</div>
-                    )}
-                  </div>
+                  <button
+                    onClick={() => setSelectedTeacherForPerformance(teacher)}
+                    className="w-full py-2 bg-emerald-50 hover:bg-[#1b4d3e] text-[#1b4d3e] hover:text-white border border-emerald-300 font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 transition-all shadow-xs cursor-pointer mt-2"
+                  >
+                    <BarChart3 className="w-3.5 h-3.5" />
+                    <span>View Student Performance</span>
+                  </button>
                 </div>
               );
             })}
@@ -727,6 +746,180 @@ export default function PrincipalPortal() {
           }}
         />
       )}
+
+      {/* TEACHER STUDENT PERFORMANCE OVERVIEW MODAL */}
+      {selectedTeacherForPerformance && (() => {
+        const tName = selectedTeacherForPerformance.name;
+        const assignedClassIds = selectedTeacherForPerformance.assignedClasses || classes.filter(c => c.classTeacher === tName).map(c => c.id);
+        
+        const teacherStudents = [];
+        assignedClassIds.forEach(cId => {
+          const clsObj = classes.find(c => c.id === cId) || { name: cId, shift: '' };
+          const stList = students[cId] || [];
+          stList.forEach(st => {
+            teacherStudents.push({
+              ...st,
+              classId: cId,
+              className: clsObj.name,
+              shift: clsObj.shift
+            });
+          });
+        });
+
+        const teacherMarks = [];
+        assignedClassIds.forEach(cId => {
+          const classMarks = studentMarks[cId] || [];
+          classMarks.forEach(m => teacherMarks.push(m));
+        });
+
+        const avgAttendancePct = teacherStudents.length > 0
+          ? Math.round(teacherStudents.reduce((sum, st) => sum + (st.attendancePct || 90), 0) / teacherStudents.length)
+          : 92;
+
+        const totalExamRecords = teacherMarks.length;
+        const passedExamRecords = teacherMarks.filter(m => m.status === 'PASSED').length;
+        const passRatePct = totalExamRecords > 0 ? Math.round((passedExamRecords / totalExamRecords) * 100) : 100;
+
+        return (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+            <div className="bg-white rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-scale-up my-8">
+              
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-[#1b4d3e] text-2xl flex items-center justify-center border border-emerald-300">
+                    {selectedTeacherForPerformance.avatar || '👨‍🏫'}
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <h3 className="text-lg font-black text-slate-900">{tName}</h3>
+                      <span className="bg-emerald-100 text-[#1b4d3e] text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-300">
+                        Faculty Performance Overview
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium">
+                      Username: <span className="font-mono font-bold text-slate-700">{selectedTeacherForPerformance.username || 'teacher'}</span> • Managing {assignedClassIds.length} Class Session(s)
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSelectedTeacherForPerformance(null)}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center transition-all cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Quick Metrics Bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-center">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Assigned Classes</span>
+                  <span className="text-base font-black text-[#1b4d3e]">{assignedClassIds.length} Classes</span>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-center">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Students</span>
+                  <span className="text-base font-black text-slate-900">{teacherStudents.length} Enrolled</span>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-center">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Avg Attendance Rate</span>
+                  <span className={`text-base font-black ${avgAttendancePct >= 80 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    {avgAttendancePct}%
+                  </span>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-center">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Academic Pass Rate</span>
+                  <span className="text-base font-black text-emerald-700">{passRatePct}% Passed</span>
+                </div>
+              </div>
+
+              {/* Student Roster Table under this teacher */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+                    <Users className="w-4 h-4 text-[#1b4d3e]" />
+                    <span>Students Performance Directory ({teacherStudents.length})</span>
+                  </h4>
+                  <span className="text-[10px] text-slate-500 font-medium">Eligibility: ≥80% Attendance Required</span>
+                </div>
+
+                <div className="overflow-x-auto max-h-[360px] overflow-y-auto border border-slate-200 rounded-2xl">
+                  <table className="w-full text-left text-xs text-slate-700">
+                    <thead className="bg-slate-100 text-slate-600 uppercase font-semibold text-[10px] sticky top-0 z-10">
+                      <tr>
+                        <th className="p-3">Roll #</th>
+                        <th className="p-3">Student Name</th>
+                        <th className="p-3">Class</th>
+                        <th className="p-3">Attendance %</th>
+                        <th className="p-3">Eligibility</th>
+                        <th className="p-3">Exam Score</th>
+                        <th className="p-3 text-right">Academic Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 font-medium bg-white">
+                      {teacherStudents.map(st => {
+                        const stAttendance = st.attendancePct || 90;
+                        const isEligible = stAttendance >= 80;
+                        const stMarks = teacherMarks.find(m => m.rollNo === st.rollNo);
+
+                        return (
+                          <tr key={`${st.classId}_${st.rollNo}`} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-3 font-mono font-bold text-slate-900">#{st.rollNo}</td>
+                            <td className="p-3 font-bold text-slate-900">
+                              <div className="flex items-center space-x-2">
+                                <img src={st.photo} alt={st.name} className="w-7 h-7 rounded-full object-cover border border-slate-200" />
+                                <span>{st.name}</span>
+                              </div>
+                            </td>
+                            <td className="p-3 text-slate-600 font-medium">{st.className}</td>
+                            <td className="p-3 font-mono font-bold text-slate-900">{stAttendance}%</td>
+                            <td className="p-3">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                isEligible
+                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                  : 'bg-rose-100 text-rose-800 border-rose-300'
+                              }`}>
+                                {isEligible ? 'Eligible' : 'Low Attendance'}
+                              </span>
+                            </td>
+                            <td className="p-3 font-mono font-bold">
+                              {stMarks ? `${stMarks.totalMarks} / 500 (${stMarks.percentage}%)` : <span className="text-slate-400 font-normal italic">Pending</span>}
+                            </td>
+                            <td className="p-3 text-right">
+                              {stMarks ? (
+                                <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                                  stMarks.status === 'PASSED' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-rose-100 text-rose-800 border-rose-300'
+                                }`}>
+                                  Grade {stMarks.grade} • {stMarks.status}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Pending</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  onClick={() => setSelectedTeacherForPerformance(null)}
+                  className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+                >
+                  Close Performance View
+                </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );
