@@ -671,35 +671,64 @@ export function AttendanceProvider({ children }) {
   const fetchSupabaseData = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) return;
     try {
-      // 1. Fetch Teachers
+      // 1. Fetch Teachers (Merging remote with local state to prevent resetting Principal assignments on refresh)
       const { data: tData, error: tErr } = await supabase.from('teachers').select('*');
       if (!tErr && tData && tData.length > 0) {
-        const mappedTeachers = tData.map(t => ({
-          id: t.id,
-          username: t.username,
-          password: t.password,
-          name: t.name,
-          role: t.role || 'teacher',
-          avatar: t.avatar || '👨‍🏫',
-          assignedClasses: t.assigned_classes || [],
-          classTeacherClassId: t.class_teacher_class_id || t.classTeacherClassId || null
-        }));
-        setTeachers(mappedTeachers);
+        setTeachers(prev => {
+          const remoteMapped = tData.map(t => {
+            const existing = prev.find(p => p.id === t.id || p.username === t.username);
+            return {
+              id: t.id,
+              username: t.username,
+              password: t.password,
+              name: t.name,
+              role: t.role || 'teacher',
+              avatar: t.avatar || '👨‍🏫',
+              assignedClasses: t.assigned_classes || existing?.assignedClasses || [],
+              classTeacherClassId: t.class_teacher_class_id || existing?.classTeacherClassId || null
+            };
+          });
+
+          // Preserve any local teacher assignments that were set by Principal
+          return prev.map(p => {
+            const remote = remoteMapped.find(r => r.id === p.id || r.username === p.username);
+            if (!remote) return p;
+            return {
+              ...remote,
+              classTeacherClassId: p.classTeacherClassId || remote.classTeacherClassId || null,
+              assignedClasses: p.assignedClasses?.length > 0 ? p.assignedClasses : remote.assignedClasses
+            };
+          });
+        });
       }
 
-      // 2. Fetch Classes
+      // 2. Fetch Classes (Merging remote with local state)
       const { data: clsData, error: clsErr } = await supabase.from('classes').select('*');
       if (!clsErr && clsData && clsData.length > 0) {
-        const mappedClasses = clsData.map(c => ({
-          id: c.id,
-          name: c.name,
-          shift: c.shift,
-          shiftTime: c.shift_time,
-          teacherId: c.teacher_id || c.teacherId,
-          classTeacher: c.class_teacher || c.classTeacher,
-          totalStudents: c.total_students || 15
-        }));
-        setClasses(mappedClasses);
+        setClasses(prev => {
+          const remoteMapped = clsData.map(c => {
+            const existing = prev.find(p => p.id === c.id);
+            return {
+              id: c.id,
+              name: c.name,
+              shift: c.shift,
+              shiftTime: c.shift_time,
+              teacherId: c.teacher_id || existing?.teacherId || null,
+              classTeacher: c.class_teacher || existing?.classTeacher || null,
+              totalStudents: c.total_students || 15
+            };
+          });
+
+          return prev.map(p => {
+            const remote = remoteMapped.find(r => r.id === p.id);
+            if (!remote) return p;
+            return {
+              ...remote,
+              classTeacher: p.classTeacher || remote.classTeacher,
+              teacherId: p.teacherId || remote.teacherId
+            };
+          });
+        });
       }
 
       // 3. Fetch Students
@@ -985,7 +1014,7 @@ export function AttendanceProvider({ children }) {
     const className = classObj ? classObj.name : classId;
     const sameNameClassIds = classes.filter(c => c.name === className).map(c => c.id);
 
-    setTeachers(prev => prev.map(t => {
+    const updatedTeachers = teachers.map(t => {
       if (t.id === teacherId) {
         const currentAssigned = t.assignedClasses || [];
         const newAssigned = Array.from(new Set([...currentAssigned, ...sameNameClassIds])).slice(0, 2);
@@ -999,14 +1028,22 @@ export function AttendanceProvider({ children }) {
         return { ...t, classTeacherClassId: null };
       }
       return t;
-    }));
+    });
 
-    setClasses(prev => prev.map(c => {
+    const updatedClasses = classes.map(c => {
       if (c.name === className || c.id === classId) {
         return { ...c, teacherId: targetTeacher.id, classTeacher: targetTeacher.name };
       }
       return c;
-    }));
+    });
+
+    setTeachers(updatedTeachers);
+    setClasses(updatedClasses);
+
+    try {
+      localStorage.setItem('schoolzz_teachers', JSON.stringify(updatedTeachers));
+      localStorage.setItem('schoolzz_classes', JSON.stringify(updatedClasses));
+    } catch (e) {}
 
     if (isSupabaseConfigured && supabase) {
       supabase.from('classes').update({ class_teacher: targetTeacher.name, teacher_id: targetTeacher.id }).in('id', sameNameClassIds);
