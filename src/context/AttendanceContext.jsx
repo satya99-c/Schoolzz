@@ -171,7 +171,16 @@ export function AttendanceProvider({ children }) {
       const saved = localStorage.getItem('schoolzz_submissions');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object') return parsed;
+        if (parsed && typeof parsed === 'object') {
+          const cleaned = {};
+          Object.keys(parsed).forEach(key => {
+            const sub = parsed[key];
+            if (sub && sub.date && key.includes('_20')) {
+              cleaned[key] = sub;
+            }
+          });
+          return cleaned;
+        }
       }
     } catch (e) {}
     return {};
