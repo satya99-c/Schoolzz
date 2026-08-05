@@ -325,6 +325,7 @@ export default function TeacherPortal() {
               classInfo={activeClassObj}
               markedRecords={currentMarkedRecords}
               studentList={activeStudentList}
+              submissionStatus={submissions[`${activeClassId}_${dateStr}`]?.status || 'NOT_SUBMITTED'}
               onBackToDeck={handleBackToDeck}
               onConfirmSubmit={handleFinalSubmit}
             />

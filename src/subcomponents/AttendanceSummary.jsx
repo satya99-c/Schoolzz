@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Send, CheckCircle2, XCircle, Calendar, RefreshCw, UserCheck } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle2, XCircle, Calendar, RefreshCw, UserCheck, Lock } from 'lucide-react';
 
-export default function AttendanceSummary({ classInfo, markedRecords, onBackToDeck, onConfirmSubmit, onSubmit }) {
+export default function AttendanceSummary({ classInfo, markedRecords, submissionStatus = 'NOT_SUBMITTED', onBackToDeck, onConfirmSubmit, onSubmit }) {
   const [records, setRecords] = useState(markedRecords);
+
+  const isLocked = (submissionStatus === 'PENDING_APPROVAL' || submissionStatus === 'APPROVED') && submissionStatus !== 'DECLINED';
 
   const presentCount = records.filter(r => r.status === 'present').length;
   const absentRecords = records.filter(r => r.status === 'absent');
@@ -10,6 +12,7 @@ export default function AttendanceSummary({ classInfo, markedRecords, onBackToDe
 
   // Toggle student status directly from summary table
   const handleToggleStatus = (rollNo) => {
+    if (isLocked) return;
     setRecords(prev =>
       prev.map(r => {
         if (r.rollNo === rollNo) {
@@ -23,6 +26,7 @@ export default function AttendanceSummary({ classInfo, markedRecords, onBackToDe
 
   // Toggle planned leave YES/NO directly from summary table
   const handleTogglePlannedLeave = (rollNo) => {
+    if (isLocked) return;
     setRecords(prev =>
       prev.map(r => {
         if (r.rollNo === rollNo) {
@@ -34,6 +38,7 @@ export default function AttendanceSummary({ classInfo, markedRecords, onBackToDe
   };
 
   const handleFinalSubmit = () => {
+    if (isLocked) return;
     const submitFn = onConfirmSubmit || onSubmit;
     if (submitFn) {
       submitFn(records);
@@ -117,27 +122,31 @@ export default function AttendanceSummary({ classInfo, markedRecords, onBackToDe
                 {/* Right controls: Planned Leave badge + Toggle button */}
                 <div className="flex items-center space-x-3">
                   {/* Planned Leave Toggle */}
-                  <button
-                    onClick={() => handleTogglePlannedLeave(student.rollNo)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all border cursor-pointer ${
-                      student.plannedLeave
-                        ? 'bg-amber-100 text-amber-900 border-amber-300'
-                        : 'bg-rose-100 text-rose-900 border-rose-300'
-                    }`}
-                    title="Click to toggle planned leave status"
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>Planned Leave: <strong>{student.plannedLeave ? 'YES' : 'NO'}</strong></span>
-                  </button>
+                  {!isLocked && (
+                    <button
+                      onClick={() => handleTogglePlannedLeave(student.rollNo)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all border cursor-pointer ${
+                        student.plannedLeave
+                          ? 'bg-amber-100 text-amber-900 border-amber-300'
+                          : 'bg-rose-100 text-rose-900 border-rose-300'
+                      }`}
+                      title="Click to toggle planned leave status"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>Planned Leave: <strong>{student.plannedLeave ? 'YES' : 'NO'}</strong></span>
+                    </button>
+                  )}
 
                   {/* Change to Present Button */}
-                  <button
-                    onClick={() => handleToggleStatus(student.rollNo)}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-100 text-[#1b4d3e] hover:bg-[#1b4d3e] hover:text-white border border-emerald-300 transition-all flex items-center space-x-1 cursor-pointer"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Mark Present</span>
-                  </button>
+                  {!isLocked && (
+                    <button
+                      onClick={() => handleToggleStatus(student.rollNo)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-100 text-[#1b4d3e] hover:bg-[#1b4d3e] hover:text-white border border-emerald-300 transition-all flex items-center space-x-1 cursor-pointer"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Mark Present</span>
+                    </button>
+                  )}
                 </div>
 
               </div>
@@ -161,10 +170,24 @@ export default function AttendanceSummary({ classInfo, markedRecords, onBackToDe
         {/* SUBMIT FOR APPROVAL BUTTON */}
         <button
           onClick={handleFinalSubmit}
-          className="w-full sm:w-auto flex items-center justify-center space-x-2 px-8 py-3.5 rounded-2xl bg-[#1b4d3e] hover:bg-[#143c30] text-white font-extrabold text-sm shadow-md transition-all cursor-pointer active:scale-95"
+          disabled={isLocked}
+          className={`w-full sm:w-auto flex items-center justify-center space-x-2 px-8 py-3.5 rounded-2xl font-extrabold text-sm shadow-md transition-all ${
+            isLocked
+              ? 'bg-slate-200 border border-slate-300 text-slate-400 cursor-not-allowed shadow-none'
+              : 'bg-[#1b4d3e] hover:bg-[#143c30] text-white cursor-pointer active:scale-95'
+          }`}
         >
-          <Send className="w-4 h-4 text-emerald-200" />
-          <span>SUBMIT FOR PRINCIPAL APPROVAL</span>
+          {isLocked ? (
+            <>
+              <Lock className="w-4 h-4 text-slate-400" />
+              <span>SUBMISSION LOCKED ({submissionStatus === 'APPROVED' ? 'APPROVED' : 'PENDING APPROVAL'})</span>
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4 text-emerald-200" />
+              <span>SUBMIT FOR PRINCIPAL APPROVAL</span>
+            </>
+          )}
         </button>
 
       </div>
