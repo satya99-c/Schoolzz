@@ -339,11 +339,21 @@ export default function AttendanceDeck({
 
               {markedRecords.length > 0 && (
                 <button
-                  onClick={() => onFinish(markedRecords)}
-                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-emerald-50 text-[#1b4d3e] font-extrabold text-xs shadow-md flex items-center space-x-1 transition-all cursor-pointer active:scale-95 border border-emerald-200"
+                  onClick={() => !isLocked && onFinish(markedRecords)}
+                  disabled={isLocked}
+                  className={`px-3.5 py-1.5 rounded-xl font-extrabold text-xs flex items-center space-x-1 transition-all border ${
+                    isLocked
+                      ? 'bg-emerald-950/40 text-emerald-300/40 border-emerald-800/40 cursor-not-allowed opacity-60 shadow-none'
+                      : 'bg-white hover:bg-emerald-50 text-[#1b4d3e] cursor-pointer active:scale-95 border-emerald-200 shadow-md'
+                  }`}
+                  title={isLocked ? 'Attendance is locked after submission' : 'Submit attendance'}
                 >
-                  <CheckCircle className="w-3.5 h-3.5 text-[#1b4d3e]" />
-                  <span>Submit</span>
+                  {isLocked ? (
+                    <Lock className="w-3.5 h-3.5 text-emerald-300/40" />
+                  ) : (
+                    <CheckCircle className="w-3.5 h-3.5 text-[#1b4d3e]" />
+                  )}
+                  <span>{isLocked ? 'Submit (Locked)' : 'Submit'}</span>
                 </button>
               )}
             </div>
