@@ -1,22 +1,20 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
-// Sanitizes Organization Name (e.g. "Hyderabad High School" -> "HyderabadHighSchool")
+// Sanitizes Organization Name to lowercase for 100% PostgreSQL compatibility (e.g. "Test New Org" -> "testneworg")
 export function sanitizeOrgName(name) {
-  if (!name) return 'SchoolzzOrg';
-  const clean = name.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-  const words = clean.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return 'SchoolzzOrg';
-  return words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+  if (!name) return 'schoolzzorg';
+  const clean = name.replace(/[^a-zA-Z0-9]/g, '').trim().toLowerCase();
+  return clean || 'schoolzzorg';
 }
 
-// Generates dynamic database table names based on Organization Name
+// Generates dynamic database table names based on Organization Name (all lowercase)
 export function getOrgTableNames(orgName) {
   const base = sanitizeOrgName(orgName);
   return {
     orgTable: base,
-    principalTable: `${base}_Principal`,
-    teachersTable: `${base}_Teachers`,
-    studentsTable: `${base}_Students`
+    principalTable: `${base}_principal`,
+    teachersTable: `${base}_teachers`,
+    studentsTable: `${base}_students`
   };
 }
 

@@ -5,8 +5,13 @@
 
 CREATE OR REPLACE FUNCTION create_organization_tables(org_name text)
 RETURNS void AS $$
+DECLARE
+  clean_org text;
 BEGIN
-  -- 1. Create Organization Table (<OrgName>)
+  -- Normalize org_name to lowercase
+  clean_org := lower(org_name);
+
+  -- 1. Create Organization Table (<org_name>)
   EXECUTE format('
     CREATE TABLE IF NOT EXISTS %I (
       code text PRIMARY KEY,
@@ -16,11 +21,11 @@ BEGIN
       admin_email text,
       registered_at timestamp with time zone DEFAULT now()
     );
-  ', org_name);
-  EXECUTE format('GRANT ALL ON TABLE %I TO anon, authenticated, service_role;', org_name);
-  EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY;', org_name);
+  ', clean_org);
+  EXECUTE format('GRANT ALL ON TABLE %I TO anon, authenticated, service_role;', clean_org);
+  EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY;', clean_org);
 
-  -- 2. Create Principal Table (<OrgName>_Principal)
+  -- 2. Create Principal Table (<org_name>_principal)
   EXECUTE format('
     CREATE TABLE IF NOT EXISTS %I (
       id text PRIMARY KEY,
@@ -31,11 +36,11 @@ BEGIN
       school_code text,
       created_at timestamp with time zone DEFAULT now()
     );
-  ', org_name || '_Principal');
-  EXECUTE format('GRANT ALL ON TABLE %I TO anon, authenticated, service_role;', org_name || '_Principal');
-  EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY;', org_name || '_Principal');
+  ', clean_org || '_principal');
+  EXECUTE format('GRANT ALL ON TABLE %I TO anon, authenticated, service_role;', clean_org || '_principal');
+  EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY;', clean_org || '_principal');
 
-  -- 3. Create Teachers Table (<OrgName>_Teachers)
+  -- 3. Create Teachers Table (<org_name>_teachers)
   EXECUTE format('
     CREATE TABLE IF NOT EXISTS %I (
       id text PRIMARY KEY,
@@ -48,11 +53,11 @@ BEGIN
       school_code text,
       created_at timestamp with time zone DEFAULT now()
     );
-  ', org_name || '_Teachers');
-  EXECUTE format('GRANT ALL ON TABLE %I TO anon, authenticated, service_role;', org_name || '_Teachers');
-  EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY;', org_name || '_Teachers');
+  ', clean_org || '_teachers');
+  EXECUTE format('GRANT ALL ON TABLE %I TO anon, authenticated, service_role;', clean_org || '_teachers');
+  EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY;', clean_org || '_teachers');
 
-  -- 4. Create Students Table (<OrgName>_Students)
+  -- 4. Create Students Table (<org_name>_students)
   EXECUTE format('
     CREATE TABLE IF NOT EXISTS %I (
       id text PRIMARY KEY,
@@ -69,8 +74,8 @@ BEGIN
       school_code text,
       created_at timestamp with time zone DEFAULT now()
     );
-  ', org_name || '_Students');
-  EXECUTE format('GRANT ALL ON TABLE %I TO anon, authenticated, service_role;', org_name || '_Students');
-  EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY;', org_name || '_Students');
+  ', clean_org || '_students');
+  EXECUTE format('GRANT ALL ON TABLE %I TO anon, authenticated, service_role;', clean_org || '_students');
+  EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY;', clean_org || '_students');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
