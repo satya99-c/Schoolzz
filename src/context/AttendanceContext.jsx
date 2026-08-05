@@ -860,15 +860,15 @@ export function AttendanceProvider({ children }) {
       return { success: false, error: 'Please select a valid teacher.' };
     }
 
-    if (targetTeacher.assignedClasses && targetTeacher.assignedClasses.length >= 2) {
+    if (targetTeacher.assignedClasses && targetTeacher.assignedClasses.length >= 1) {
       return {
         success: false,
-        error: `Teacher '${targetTeacher.name}' is already occupied with 2 class assignments! Please assign to another available teacher or onboard a new teacher.`
+        error: `Teacher '${targetTeacher.name}' is already assigned to a class section! Per policy, 1 teacher can only be assigned to 1 class.`
       };
     }
 
     const classId = `${classData.name.replace(/\s+/g, '')}_${classData.shift.split(' ')[0].toLowerCase()}`;
-    const updatedAssignedClasses = [...(targetTeacher.assignedClasses || []), classId];
+    const updatedAssignedClasses = [classId];
 
     const newClassObj = {
       id: classId,
@@ -941,6 +941,36 @@ export function AttendanceProvider({ children }) {
       showToast(`Class '${classData.name}' with ${studentList.length} students created & assigned to ${targetTeacher.name}!`, 'success');
     }
 
+    return { success: true };
+  };
+
+  // Reassign Teacher to Class Section (Enforces 1 Teacher -> 1 Class Section)
+  const reassignTeacherClass = (teacherId, classId) => {
+    const targetTeacher = teachers.find(t => t.id === teacherId);
+    if (!targetTeacher) return { success: false, error: 'Teacher not found' };
+
+    setTeachers(prev => prev.map(t => {
+      if (t.id === teacherId) {
+        return { ...t, assignedClasses: [classId] };
+      }
+      if (t.assignedClasses && t.assignedClasses.includes(classId) && t.id !== teacherId) {
+        return { ...t, assignedClasses: t.assignedClasses.filter(c => c !== classId) };
+      }
+      return t;
+    }));
+
+    setClasses(prev => prev.map(c => {
+      if (c.id === classId) {
+        return { ...c, teacherId: targetTeacher.id, classTeacher: targetTeacher.name };
+      }
+      return c;
+    }));
+
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('teachers').update({ assigned_classes: [classId] }).eq('id', teacherId);
+    }
+
+    showToast(`Teacher '${targetTeacher.name}' assigned to class section!`, 'success');
     return { success: true };
   };
 
@@ -1461,6 +1491,7 @@ export function AttendanceProvider({ children }) {
         whatsappLogs,
         onboardTeacher,
         createClassAndStudents,
+        reassignTeacherClass,
         submitTeacherAttendance,
         resetClassAttendanceForToday,
         approveAttendance,

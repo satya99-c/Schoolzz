@@ -35,10 +35,10 @@ export default function CreateClassModal({ onClose, onOpenOnboardTeacher }) {
     }))
   );
 
-  // Check teacher occupancy
+  // Check teacher occupancy (1 Teacher -> 1 Class Section only)
   const teacherOccupancy = teachers.map(t => {
     const assignedCount = t.assignedClasses ? t.assignedClasses.length : 0;
-    const isOccupied = assignedCount >= 2;
+    const isOccupied = assignedCount >= 1;
     return {
       ...t,
       assignedCount,
@@ -64,7 +64,7 @@ export default function CreateClassModal({ onClose, onOpenOnboardTeacher }) {
     // Double check selected teacher
     const selTeacher = teacherOccupancy.find(t => t.id === classData.teacherId);
     if (selTeacher?.isOccupied) {
-      setError(`Teacher ${selTeacher.name} is already occupied with max 2 class assignments! Please select an available teacher.`);
+      setError(`Teacher ${selTeacher.name} is already assigned to another class section. Per policy, 1 teacher can only be assigned to 1 class. Please select an available teacher or onboard a new teacher.`);
       return;
     }
 
@@ -173,7 +173,7 @@ export default function CreateClassModal({ onClose, onOpenOnboardTeacher }) {
                         setClassData({ ...classData, teacherId: teacher.id });
                         setError('');
                       } else {
-                        setError(`Teacher ${teacher.name} is already occupied with 2 classes! Assign to another available teacher.`);
+                        setError(`Teacher ${teacher.name} is already assigned to a class section! Per policy, 1 teacher can only be assigned to 1 class.`);
                       }
                     }}
                     className={`p-3 rounded-2xl border flex items-center justify-between transition-all cursor-pointer ${
@@ -198,7 +198,7 @@ export default function CreateClassModal({ onClose, onOpenOnboardTeacher }) {
                       {teacher.isOccupied ? (
                         <span className="bg-rose-100 text-rose-800 border border-rose-200 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center space-x-1">
                           <UserX className="w-3 h-3 text-rose-600" />
-                          <span>OCCUPIED (2/2 Classes)</span>
+                          <span>ASSIGNED (1/1 Class)</span>
                         </span>
                       ) : (
                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
@@ -206,7 +206,7 @@ export default function CreateClassModal({ onClose, onOpenOnboardTeacher }) {
                             ? 'bg-[#1b4d3e] text-white border-[#1b4d3e] font-extrabold'
                             : 'bg-emerald-100 text-emerald-800 border-emerald-300'
                         }`}>
-                          {classData.teacherId === teacher.id ? '✓ Selected' : `Available (${teacher.assignedCount}/2 Classes)`}
+                          {classData.teacherId === teacher.id ? '✓ Selected' : 'Available (Unassigned)'}
                         </span>
                       )}
                     </div>

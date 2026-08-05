@@ -5,12 +5,17 @@ import PrincipalReports from '../subcomponents/PrincipalReports';
 import OnboardTeacherModal from '../components/OnboardTeacherModal';
 import CreateClassModal from '../components/CreateClassModal';
 import StudentReportModal from '../subcomponents/StudentReportModal';
-import { Shield, Bell, CheckCircle2, XCircle, MessageSquare, BarChart3, Sun, Moon, AlertTriangle, UserPlus, PlusCircle, Users, School, Award, ArrowLeft, ChevronRight, FileText, Copy, GraduationCap } from 'lucide-react';
+import AssignTeacherModal from '../subcomponents/AssignTeacherModal';
+import AcademicScorecardManager from '../subcomponents/AcademicScorecardManager';
+import { Shield, Bell, CheckCircle2, XCircle, MessageSquare, BarChart3, Sun, Moon, AlertTriangle, UserPlus, PlusCircle, Users, School, Award, ArrowLeft, ChevronRight, FileText, Copy, GraduationCap, UserCheck } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function PrincipalPortal() {
   const { classes, teachers, students, submissions, approveAttendance, declineAttendance, whatsappLogs, setActiveWhatsAppPreview, leaveApplications = [], approveLeaveApplication, declineLeaveApplication, attendanceReminders = [], triggerManualReminder, studentMarks, showToast, activeSchool } = useAttendance();
-  const [activeTab, setActiveTab] = useState('approvals'); // 'approvals' | 'overview' | 'manage' | 'whatsapp' | 'reports' | 'marks'
+  const [activeTab, setActiveTab] = useState('approvals'); // 'approvals' | 'overview' | 'manage' | 'whatsapp' | 'scorecards'
+
+  // Teacher Assignment Modal State
+  const [assigningTeacher, setAssigningTeacher] = useState(null);
 
   // Principal Marks View State
   const [selectedPrincipalMarksClassId, setSelectedPrincipalMarksClassId] = useState(null);
@@ -180,15 +185,15 @@ export default function PrincipalPortal() {
         </button>
 
         <button
-          onClick={() => setActiveTab('reports')}
+          onClick={() => setActiveTab('scorecards')}
           className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'reports'
+            activeTab === 'scorecards'
               ? 'bg-[#1b4d3e] text-white shadow-md'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <BarChart3 className="w-4 h-4" />
-          <span>Attendance Analytics Reports</span>
+          <Award className="w-4 h-4 text-emerald-400" />
+          <span>Academic Scorecards & Exam Marks</span>
         </button>
 
         <button
@@ -427,40 +432,53 @@ export default function PrincipalPortal() {
                         </div>
                       </div>
 
-                      {isOccupied ? (
-                        <span className="bg-rose-100 text-rose-800 border border-rose-300 text-[10px] font-bold px-2.5 py-1 rounded-full">
-                          ⚠️ Occupied ({assignedCount}/2)
+                      {assignedCount >= 1 ? (
+                        <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-extrabold px-2.5 py-1 rounded-full">
+                          🏫 Assigned (1/1 Class)
                         </span>
                       ) : (
-                        <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-full">
-                          ✓ Available ({assignedCount}/2)
+                        <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold px-2.5 py-1 rounded-full">
+                          ⚠️ Unassigned (Available)
                         </span>
                       )}
                     </div>
 
                     <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1 text-xs">
-                      <div className="text-[10px] text-slate-500 font-bold uppercase">Assigned Classes:</div>
+                      <div className="text-[10px] text-slate-500 font-bold uppercase">Assigned Class Section (1:1 Rule):</div>
                       {teacher.assignedClasses && teacher.assignedClasses.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5 pt-1">
-                          {teacher.assignedClasses.map(cId => (
-                            <span key={cId} className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-lg">
-                              {cId}
-                            </span>
-                          ))}
+                          {teacher.assignedClasses.map(cId => {
+                            const cObj = classes.find(c => c.id === cId);
+                            return (
+                              <span key={cId} className="bg-[#1b4d3e] text-white border border-[#1b4d3e] text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg shadow-2xs">
+                                {cObj ? `${cObj.name} (${cObj.shift})` : cId}
+                              </span>
+                            );
+                          })}
                         </div>
                       ) : (
-                        <div className="text-[11px] text-slate-400 italic">No classes assigned yet</div>
+                        <div className="text-[11px] text-amber-700 italic font-semibold">No class assigned yet — Click 'Assign Class' below</div>
                       )}
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => setSelectedTeacherForPerformance(teacher)}
-                    className="w-full py-2 bg-emerald-50 hover:bg-[#1b4d3e] text-[#1b4d3e] hover:text-white border border-emerald-300 font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 transition-all shadow-xs cursor-pointer mt-2"
-                  >
-                    <BarChart3 className="w-3.5 h-3.5" />
-                    <span>View Student Performance</span>
-                  </button>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <button
+                      onClick={() => setAssigningTeacher(teacher)}
+                      className="flex-1 py-2 bg-slate-100 hover:bg-[#1b4d3e] text-slate-800 hover:text-white border border-slate-300 font-bold text-xs rounded-xl flex items-center justify-center space-x-1 transition-all cursor-pointer shadow-2xs"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>{teacher.assignedClasses?.length > 0 ? 'Change Class' : 'Assign Class'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => setSelectedTeacherForPerformance(teacher)}
+                      className="flex-1 py-2 bg-emerald-50 hover:bg-[#1b4d3e] text-[#1b4d3e] hover:text-white border border-emerald-300 font-bold text-xs rounded-xl flex items-center justify-center space-x-1 transition-all shadow-2xs cursor-pointer"
+                    >
+                      <BarChart3 className="w-3.5 h-3.5" />
+                      <span>Performance</span>
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -552,198 +570,10 @@ export default function PrincipalPortal() {
       {/* TAB 5: OVERALL PERFORMANCE REPORTS */}
       {activeTab === 'reports' && <PrincipalReports />}
 
-      {/* TAB 6: ACADEMIC EXAM SCORECARDS & MARKS VIEW */}
-      {activeTab === 'marks' && (() => {
-        const uniqueClassNamesList = Array.from(new Set(classes.map(c => c.name)));
-
-        const uniqueScorecardClasses = uniqueClassNamesList.map(className => {
-          const shiftClasses = classes.filter(c => c.name === className);
-          const primaryClass = shiftClasses[0];
-          const teacherNames = Array.from(new Set(shiftClasses.map(c => c.classTeacher))).join(' / ');
-
-          const classStudentMap = {};
-          const classMarksList = [];
-
-          shiftClasses.forEach(cls => {
-            const rawStudents = students[cls.id] || [];
-            rawStudents.forEach(st => {
-              if (!classStudentMap[st.rollNo]) {
-                classStudentMap[st.rollNo] = st;
-              }
-            });
-
-            const marks = studentMarks[cls.id] || [];
-            marks.forEach(m => classMarksList.push(m));
-          });
-
-          const studentList = Object.values(classStudentMap);
-
-          const avgPct = classMarksList.length > 0
-            ? Math.round(classMarksList.reduce((sum, r) => sum + r.percentage, 0) / classMarksList.length)
-            : null;
-
-          return {
-            className,
-            primaryClassId: primaryClass.id,
-            teacherNames,
-            studentList,
-            classMarksList,
-            scorecardCount: classMarksList.length,
-            avgPct
-          };
-        });
-
-        const activeClassGroup = uniqueScorecardClasses.find(c => c.className === selectedPrincipalMarksClassId);
-
-        return (
-          <div className="space-y-6 animate-fade-in">
-            
-            {/* VIEW 1: UNIFIED CLASS CARDS */}
-            {!selectedPrincipalMarksClassId && (
-              <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md space-y-4">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900 flex items-center space-x-2">
-                    <Award className="w-5 h-5 text-[#1b4d3e]" />
-                    <span>Academic Exam Scorecards — Class Wise Overview</span>
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Select a class to review student subject marks, class performance, and scorecards.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {uniqueScorecardClasses.map(clsGroup => (
-                    <div
-                      key={clsGroup.className}
-                      className="border border-slate-200 rounded-2xl p-5 hover:border-[#1b4d3e] transition-all bg-gradient-to-br from-white to-slate-50 flex flex-col justify-between space-y-4 shadow-sm"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <span className="inline-block px-3 py-1 bg-emerald-100 text-[#1b4d3e] text-xs font-bold rounded-full mb-1">
-                            {clsGroup.className}
-                          </span>
-                          <div className="text-xs font-bold text-slate-500">
-                            Faculty: <span className="text-slate-800">{clsGroup.teacherNames}</span>
-                          </div>
-                        </div>
-                        <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg ${
-                          clsGroup.avgPct !== null ? 'bg-[#1b4d3e] text-white' : 'bg-slate-200 text-slate-600'
-                        }`}>
-                          {clsGroup.avgPct !== null ? `Avg: ${clsGroup.avgPct}%` : 'Avg: N/A'}
-                        </span>
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="text-xs text-slate-500 flex items-center space-x-2">
-                          <Users className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{clsGroup.totalStudents} Students • {clsGroup.scorecardCount} Scorecards Available</span>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => setSelectedPrincipalMarksClassId(clsGroup.className)}
-                        className="w-full py-2.5 bg-[#1b4d3e] hover:bg-[#143c30] text-white font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 transition-all shadow-md cursor-pointer"
-                      >
-                        <span>View Student Scorecards</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* VIEW 2: CLASS MARKS ROSTER FOR PRINCIPAL */}
-            {selectedPrincipalMarksClassId && activeClassGroup && (
-              <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md space-y-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => setSelectedPrincipalMarksClassId(null)}
-                      className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer"
-                    >
-                      <ArrowLeft className="w-5 h-5" />
-                    </button>
-                    <div>
-                      <h2 className="text-base font-bold text-slate-900">
-                        Class Exam Scorecards — {activeClassGroup.className}
-                      </h2>
-                      <p className="text-xs text-slate-500">
-                        Faculty: {activeClassGroup.teacherNames} • Overall Class Average: {activeClassGroup.avgPct !== null ? `${activeClassGroup.avgPct}%` : 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => setSelectedPrincipalMarksClassId(null)}
-                    className="text-xs text-[#1b4d3e] font-bold hover:underline cursor-pointer"
-                  >
-                    ← Back to All Classes
-                  </button>
-                </div>
-
-                {/* Roster Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-700">
-                    <thead className="bg-slate-100 text-slate-600 uppercase font-semibold text-[10px]">
-                      <tr>
-                        <th className="p-3">Roll #</th>
-                        <th className="p-3">Student Name</th>
-                        <th className="p-3">Exam Name</th>
-                        <th className="p-3">Math</th>
-                        <th className="p-3">Science</th>
-                        <th className="p-3">English</th>
-                        <th className="p-3">SS</th>
-                        <th className="p-3">Physics</th>
-                        <th className="p-3">Total / 500</th>
-                        <th className="p-3">Percentage</th>
-                        <th className="p-3 text-right">Grade & Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 font-medium">
-                      {activeClassGroup.studentList.map(st => {
-                        const record = activeClassGroup.classMarksList.find(r => r.rollNo === st.rollNo);
-
-                        return (
-                          <tr key={st.rollNo} className="hover:bg-slate-50 transition-colors">
-                            <td className="p-3 font-mono font-bold text-slate-900">#{st.rollNo}</td>
-                            <td className="p-3">
-                              <div className="flex items-center space-x-2">
-                                <img src={st.photo} alt={st.name} className="w-7 h-7 rounded-full object-cover border border-slate-200" />
-                                <span className="font-bold text-slate-900">{st.name}</span>
-                              </div>
-                            </td>
-                            <td className="p-3 font-medium text-slate-600">{record ? record.examName : 'Pending'}</td>
-                            <td className="p-3 font-mono">{record?.subjects?.Mathematics ?? '-'}</td>
-                            <td className="p-3 font-mono">{record?.subjects?.Science ?? '-'}</td>
-                            <td className="p-3 font-mono">{record?.subjects?.English ?? '-'}</td>
-                            <td className="p-3 font-mono">{record?.subjects?.SocialStudies ?? '-'}</td>
-                            <td className="p-3 font-mono">{record?.subjects?.Physics ?? record?.subjects?.ComputerScience ?? '-'}</td>
-                            <td className="p-3 font-mono font-bold text-slate-900">{record ? `${record.totalMarks}` : '-'}</td>
-                            <td className="p-3 font-mono font-bold text-[#1b4d3e]">{record ? `${record.percentage}%` : '-'}</td>
-                            <td className="p-3 text-right">
-                              {record ? (
-                                <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                                  record.status === 'PASSED' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-rose-100 text-rose-800 border-rose-300'
-                                }`}>
-                                  Grade {record.grade} • {record.status}
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Pending</span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-          </div>
-        );
-      })()}
+      {/* TAB: ACADEMIC EXAM MARKS & SCORECARDS */}
+      {activeTab === 'scorecards' && (
+        <AcademicScorecardManager userRole="principal" />
+      )}
 
       {/* TAB: STUDENT UNIQUE ID LOGINS ROSTER */}
       {activeTab === 'student_logins' && (
@@ -1022,6 +852,14 @@ export default function PrincipalPortal() {
           student={viewingStudentScorecard.student}
           className={viewingStudentScorecard.className}
           onClose={() => setViewingStudentScorecard(null)}
+        />
+      )}
+
+      {/* ASSIGN TEACHER CLASS MODAL (1 Teacher : 1 Class) */}
+      {assigningTeacher && (
+        <AssignTeacherModal
+          teacher={assigningTeacher}
+          onClose={() => setAssigningTeacher(null)}
         />
       )}
 
