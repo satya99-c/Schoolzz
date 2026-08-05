@@ -4,11 +4,14 @@ import { useAttendance } from '../context/AttendanceContext';
 import AddMarksModal from './AddMarksModal';
 
 export default function AcademicScorecardManager({ userRole = 'teacher', targetClassId }) {
-  const { classes, students, studentMarks, currentUser, saveStudentMarks } = useAttendance();
+  const { classes, students, studentMarks, currentUser } = useAttendance();
 
-  // Selected Exam Term
+  // Selected Exam Term & Class Scope
+  const teacherClassId = currentUser?.classTeacherClassId || targetClassId || currentUser?.assignedClasses?.[0];
   const [selectedExamTerm, setSelectedExamTerm] = useState('Mid-Term Examination 2026');
-  const [selectedClassId, setSelectedClassId] = useState(targetClassId || classes[0]?.id || '10-A_morning');
+  const [selectedClassId, setSelectedClassId] = useState(
+    userRole === 'teacher' ? (teacherClassId || classes[0]?.id) : (targetClassId || classes[0]?.id)
+  );
   const [editingStudent, setEditingStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 

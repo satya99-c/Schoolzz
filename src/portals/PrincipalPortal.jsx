@@ -381,7 +381,7 @@ export default function PrincipalPortal() {
                 <span>Faculty Onboarding & Teacher Occupancy Status</span>
               </h2>
               <p className="text-xs text-slate-500 mt-1">
-                Each teacher can be assigned up to max 2 classes. Teachers with 2 classes are flagged as Occupied.
+                Each teacher can take attendance for assigned classes (max 2) and can be assigned as Class Teacher (1 Class) for Academic Exam Marks & Scorecards by the Principal.
               </p>
             </div>
 
@@ -408,7 +408,7 @@ export default function PrincipalPortal() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {teachers.map(teacher => {
               const assignedCount = teacher.assignedClasses ? teacher.assignedClasses.length : 0;
-              const isOccupied = assignedCount >= 2;
+              const classTeacherObj = classes.find(c => c.id === teacher.classTeacherClassId || c.classTeacher === teacher.name);
 
               return (
                 <div key={teacher.id} className="bg-white border border-slate-200 rounded-3xl p-5 space-y-3 shadow-md relative hover:border-[#1b4d3e] transition-all flex flex-col justify-between">
@@ -432,48 +432,67 @@ export default function PrincipalPortal() {
                         </div>
                       </div>
 
-                      {assignedCount >= 1 ? (
-                        <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-extrabold px-2.5 py-1 rounded-full">
-                          🏫 Assigned (1/1 Class)
+                      {classTeacherObj ? (
+                        <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-extrabold px-2.5 py-1 rounded-full flex items-center space-x-1">
+                          <span>⭐ Class Teacher</span>
                         </span>
                       ) : (
-                        <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold px-2.5 py-1 rounded-full">
-                          ⚠️ Unassigned (Available)
+                        <span className="bg-slate-100 text-slate-700 border border-slate-300 text-[10px] font-extrabold px-2.5 py-1 rounded-full">
+                          Unassigned
                         </span>
                       )}
                     </div>
 
-                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1 text-xs">
-                      <div className="text-[10px] text-slate-500 font-bold uppercase">Assigned Class Section (1:1 Rule):</div>
-                      {teacher.assignedClasses && teacher.assignedClasses.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {teacher.assignedClasses.map(cId => {
-                            const cObj = classes.find(c => c.id === cId);
-                            return (
-                              <span key={cId} className="bg-[#1b4d3e] text-white border border-[#1b4d3e] text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg shadow-2xs">
-                                {cObj ? `${cObj.name} (${cObj.shift})` : cId}
-                              </span>
-                            );
-                          })}
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2 text-xs">
+                      <div>
+                        <div className="text-[10px] text-slate-500 font-bold uppercase">Attendance Classes (Max 2):</div>
+                        {teacher.assignedClasses && teacher.assignedClasses.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            {teacher.assignedClasses.map(cId => {
+                              const cObj = classes.find(c => c.id === cId);
+                              return (
+                                <span key={cId} className="bg-slate-200 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                                  {cObj ? `${cObj.name} (${cObj.shift})` : cId}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-slate-400 italic">No attendance classes assigned</div>
+                        )}
+                      </div>
+
+                      <div className="border-t border-slate-200 pt-1.5">
+                        <div className="text-[10px] text-emerald-800 font-bold uppercase flex items-center space-x-1">
+                          <span>⭐ Class Teacher (Exam Scorecards):</span>
                         </div>
-                      ) : (
-                        <div className="text-[11px] text-amber-700 italic font-semibold">No class assigned yet — Click 'Assign Class' below</div>
-                      )}
+                        {classTeacherObj ? (
+                          <div className="mt-1">
+                            <span className="bg-[#1b4d3e] text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg inline-block shadow-2xs">
+                              {classTeacherObj.name} ({classTeacherObj.shift})
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-amber-700 italic font-semibold mt-0.5">
+                            No Class Teacher assigned — Click below to assign
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex items-center space-x-2 mt-2">
                     <button
                       onClick={() => setAssigningTeacher(teacher)}
-                      className="flex-1 py-2 bg-slate-100 hover:bg-[#1b4d3e] text-slate-800 hover:text-white border border-slate-300 font-bold text-xs rounded-xl flex items-center justify-center space-x-1 transition-all cursor-pointer shadow-2xs"
+                      className="flex-1 py-2 bg-emerald-50 hover:bg-[#1b4d3e] text-[#1b4d3e] hover:text-white border border-emerald-300 font-bold text-xs rounded-xl flex items-center justify-center space-x-1 transition-all cursor-pointer shadow-2xs"
                     >
                       <UserCheck className="w-3.5 h-3.5" />
-                      <span>{teacher.assignedClasses?.length > 0 ? 'Change Class' : 'Assign Class'}</span>
+                      <span>{classTeacherObj ? 'Change Class Teacher' : 'Assign Class Teacher'}</span>
                     </button>
 
                     <button
                       onClick={() => setSelectedTeacherForPerformance(teacher)}
-                      className="flex-1 py-2 bg-emerald-50 hover:bg-[#1b4d3e] text-[#1b4d3e] hover:text-white border border-emerald-300 font-bold text-xs rounded-xl flex items-center justify-center space-x-1 transition-all shadow-2xs cursor-pointer"
+                      className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs rounded-xl flex items-center justify-center space-x-1 transition-all shadow-2xs cursor-pointer"
                     >
                       <BarChart3 className="w-3.5 h-3.5" />
                       <span>Performance</span>

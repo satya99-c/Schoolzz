@@ -3,13 +3,13 @@ import { X, UserCheck, School, AlertCircle } from 'lucide-react';
 import { useAttendance } from '../context/AttendanceContext';
 
 export default function AssignTeacherModal({ teacher, onClose }) {
-  const { classes, reassignTeacherClass } = useAttendance();
-  const [selectedClassId, setSelectedClassId] = useState(teacher.assignedClasses?.[0] || '');
+  const { classes, assignClassTeacher } = useAttendance();
+  const [selectedClassId, setSelectedClassId] = useState(teacher.classTeacherClassId || teacher.assignedClasses?.[0] || '');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!selectedClassId) return;
-    reassignTeacherClass(teacher.id, selectedClassId);
+    assignClassTeacher(teacher.id, selectedClassId);
     onClose();
   };
 
@@ -23,7 +23,7 @@ export default function AssignTeacherModal({ teacher, onClose }) {
             <span className="text-3xl">{teacher.avatar || '👨‍🏫'}</span>
             <div>
               <h3 className="text-base font-extrabold text-white">{teacher.name}</h3>
-              <p className="text-xs text-emerald-200 font-medium">Assign / Change Class Section (1 Teacher : 1 Class)</p>
+              <p className="text-xs text-emerald-200 font-medium">Assign Class Teacher (Scorecards & Exam Marks)</p>
             </div>
           </div>
           <button
@@ -39,7 +39,7 @@ export default function AssignTeacherModal({ teacher, onClose }) {
           <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl flex items-start space-x-2 text-xs text-emerald-900">
             <AlertCircle className="w-4 h-4 text-[#1b4d3e] shrink-0 mt-0.5" />
             <span>
-              <strong>Policy Reminder:</strong> 1 Teacher is assigned to exactly 1 Class Section. Assigning a new class section will update their primary teaching assignment.
+              <strong>Class Teacher Policy:</strong> Assigning a teacher as Class Teacher allows them to enter and edit Academic Exam Marks & Scorecards for that class section.
             </span>
           </div>
 
@@ -58,7 +58,7 @@ export default function AssignTeacherModal({ teacher, onClose }) {
                 const currentTeacher = c.classTeacher || 'Unassigned';
                 return (
                   <option key={c.id} value={c.id}>
-                    {c.name} ({c.shift}) — Current: {currentTeacher}
+                    {c.name} ({c.shift}) — Current Class Teacher: {currentTeacher}
                   </option>
                 );
               })}
@@ -79,7 +79,7 @@ export default function AssignTeacherModal({ teacher, onClose }) {
               className="px-5 py-2 bg-[#1b4d3e] text-white text-xs font-bold rounded-xl hover:bg-[#143a2f] disabled:opacity-50 transition-all cursor-pointer flex items-center space-x-1.5 shadow-md"
             >
               <UserCheck className="w-4 h-4" />
-              <span>Confirm Class Assignment</span>
+              <span>Confirm Class Teacher Assignment</span>
             </button>
           </div>
         </form>

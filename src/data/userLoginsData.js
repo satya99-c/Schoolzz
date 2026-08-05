@@ -24,7 +24,8 @@ export const TEACHER_LOGINS = [
     username: "teacher1",
     password: "teacher123",
     role: "TEACHER",
-    assignedClasses: ["10-A_morning"],
+    assignedClasses: ["10-A_morning", "10-B_afternoon"],
+    classTeacherClassId: "10-A_morning",
     department: "Mathematics",
     phone: "+91 98123 45678",
     status: "ACTIVE"
@@ -37,7 +38,8 @@ export const TEACHER_LOGINS = [
     username: "teacher2",
     password: "teacher123",
     role: "TEACHER",
-    assignedClasses: ["9-A_morning"],
+    assignedClasses: ["9-A_morning", "10-A_afternoon"],
+    classTeacherClassId: "9-A_morning",
     department: "Science",
     phone: "+91 98123 45679",
     status: "ACTIVE"

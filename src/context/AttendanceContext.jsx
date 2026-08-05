@@ -860,15 +860,16 @@ export function AttendanceProvider({ children }) {
       return { success: false, error: 'Please select a valid teacher.' };
     }
 
-    if (targetTeacher.assignedClasses && targetTeacher.assignedClasses.length >= 1) {
+    if (targetTeacher.assignedClasses && targetTeacher.assignedClasses.length >= 2) {
       return {
         success: false,
-        error: `Teacher '${targetTeacher.name}' is already assigned to a class section! Per policy, 1 teacher can only be assigned to 1 class.`
+        error: `Teacher '${targetTeacher.name}' is already assigned to max 2 classes for attendance!`
       };
     }
 
     const classId = `${classData.name.replace(/\s+/g, '')}_${classData.shift.split(' ')[0].toLowerCase()}`;
-    const updatedAssignedClasses = [classId];
+    const currentAssigned = targetTeacher.assignedClasses || [];
+    const updatedAssignedClasses = currentAssigned.includes(classId) ? currentAssigned : [...currentAssigned, classId].slice(0, 2);
 
     const newClassObj = {
       id: classId,
@@ -893,6 +894,7 @@ export function AttendanceProvider({ children }) {
       if (t.id === targetTeacher.id) {
         return {
           ...t,
+          classTeacherClassId: classId,
           assignedClasses: updatedAssignedClasses
         };
       }
@@ -944,17 +946,26 @@ export function AttendanceProvider({ children }) {
     return { success: true };
   };
 
-  // Reassign Teacher to Class Section (Enforces 1 Teacher -> 1 Class Section)
-  const reassignTeacherClass = (teacherId, classId) => {
+  // Assign Teacher as Class Teacher for Academic Marks & Scorecards (1 Teacher : 1 Class Section as Class Teacher)
+  const assignClassTeacher = (teacherId, classId) => {
     const targetTeacher = teachers.find(t => t.id === teacherId);
     if (!targetTeacher) return { success: false, error: 'Teacher not found' };
 
+    const classObj = classes.find(c => c.id === classId);
+    const className = classObj ? classObj.name : classId;
+
     setTeachers(prev => prev.map(t => {
       if (t.id === teacherId) {
-        return { ...t, assignedClasses: [classId] };
+        const currentAssigned = t.assignedClasses || [];
+        const newAssigned = currentAssigned.includes(classId) ? currentAssigned : [...currentAssigned, classId].slice(0, 2);
+        return {
+          ...t,
+          classTeacherClassId: classId,
+          assignedClasses: newAssigned
+        };
       }
-      if (t.assignedClasses && t.assignedClasses.includes(classId) && t.id !== teacherId) {
-        return { ...t, assignedClasses: t.assignedClasses.filter(c => c !== classId) };
+      if (t.classTeacherClassId === classId && t.id !== teacherId) {
+        return { ...t, classTeacherClassId: null };
       }
       return t;
     }));
@@ -967,10 +978,11 @@ export function AttendanceProvider({ children }) {
     }));
 
     if (isSupabaseConfigured && supabase) {
-      supabase.from('teachers').update({ assigned_classes: [classId] }).eq('id', teacherId);
+      supabase.from('classes').update({ class_teacher: targetTeacher.name, teacher_id: targetTeacher.id }).eq('id', classId);
+      supabase.from('teachers').update({ class_teacher_class_id: classId }).eq('id', teacherId);
     }
 
-    showToast(`Teacher '${targetTeacher.name}' assigned to class section!`, 'success');
+    showToast(`Teacher '${targetTeacher.name}' assigned as Class Teacher for ${className}!`, 'success');
     return { success: true };
   };
 
@@ -1491,7 +1503,7 @@ export function AttendanceProvider({ children }) {
         whatsappLogs,
         onboardTeacher,
         createClassAndStudents,
-        reassignTeacherClass,
+        assignClassTeacher,
         submitTeacherAttendance,
         resetClassAttendanceForToday,
         approveAttendance,

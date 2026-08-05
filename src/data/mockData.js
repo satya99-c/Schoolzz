@@ -143,7 +143,8 @@ export const MOCK_USERS = [
     name: "Mr. Sharma (Teacher 1)",
     role: "teacher",
     avatar: "👨‍🏫",
-    assignedClasses: ["10-A_morning"]
+    assignedClasses: ["10-A_morning", "10-B_afternoon"],
+    classTeacherClassId: "10-A_morning"
   },
   {
     id: "user-teacher-2",
@@ -152,7 +153,8 @@ export const MOCK_USERS = [
     name: "Mrs. Kapoor (Teacher 2)",
     role: "teacher",
     avatar: "👩‍🏫",
-    assignedClasses: ["9-A_morning"]
+    assignedClasses: ["9-A_morning", "10-A_afternoon"],
+    classTeacherClassId: "9-A_morning"
   },
   {
     id: "user-teacher-3",
@@ -161,7 +163,8 @@ export const MOCK_USERS = [
     name: "Ms. Ananya (Teacher 3)",
     role: "teacher",
     avatar: "👩‍🏫",
-    assignedClasses: ["10-B_afternoon"]
+    assignedClasses: ["10-B_afternoon", "9-A_afternoon"],
+    classTeacherClassId: "10-B_afternoon"
   },
   {
     id: "user-teacher-default",
@@ -170,7 +173,8 @@ export const MOCK_USERS = [
     name: "Mr. Sharma (Teacher 1)",
     role: "teacher",
     avatar: "👨‍🏫",
-    assignedClasses: ["10-A_morning"]
+    assignedClasses: ["10-A_morning", "10-B_afternoon"],
+    classTeacherClassId: "10-A_morning"
   },
   {
     id: "user-principal",
