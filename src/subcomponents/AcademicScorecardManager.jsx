@@ -64,13 +64,16 @@ export default function AcademicScorecardManager({ userRole = 'teacher', targetC
             <select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
-              className="bg-white/10 text-white border border-emerald-400/30 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:bg-emerald-950/80"
+              className="bg-white/10 text-white border border-emerald-400/30 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:bg-emerald-950/80 cursor-pointer"
             >
-              {classes.map(c => (
-                <option key={c.id} value={c.id} className="text-slate-900 font-semibold">
-                  {c.name} ({c.shift})
-                </option>
-              ))}
+              {Array.from(new Set(classes.map(c => c.name))).map(className => {
+                const cObj = classes.find(c => c.name === className);
+                return (
+                  <option key={cObj.id} value={cObj.id} className="text-slate-900 font-semibold">
+                    {className}
+                  </option>
+                );
+              })}
             </select>
           )}
 

@@ -469,7 +469,7 @@ export default function PrincipalPortal() {
                         {classTeacherObj ? (
                           <div className="mt-1">
                             <span className="bg-[#1b4d3e] text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg inline-block shadow-2xs">
-                              {classTeacherObj.name} ({classTeacherObj.shift})
+                              {classTeacherObj.name}
                             </span>
                           </div>
                         ) : (
