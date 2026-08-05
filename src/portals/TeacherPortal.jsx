@@ -38,6 +38,17 @@ export default function TeacherPortal() {
   const dateStr = getTodayLocalDateStr();
 
   const handleStartAttendance = (classId) => {
+    setActiveClassId(classId);
+    const existingSub = submissions[`${classId}_${dateStr}`];
+    
+    if (existingSub && existingSub.records && existingSub.records.length > 0) {
+      // Review / Retake: Bypass 2nd image popup modal and go straight to Summary
+      setCurrentMarkedRecords(existingSub.records);
+      setMode('summary');
+      return;
+    }
+
+    // Start fresh attendance: open confirmation popup modal
     setPendingStartClassId(classId);
     setShowAllPresentModal(true);
   };
