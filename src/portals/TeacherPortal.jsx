@@ -42,9 +42,9 @@ export default function TeacherPortal() {
     const existingSub = submissions[`${classId}_${dateStr}`];
     
     if (existingSub && existingSub.records && existingSub.records.length > 0) {
-      // Review / Retake: Bypass 2nd image popup modal and go straight to Summary
+      // Review / Retake: Open Attendance Deck card view directly
       setCurrentMarkedRecords(existingSub.records);
-      setMode('summary');
+      setMode('deck');
       return;
     }
 
