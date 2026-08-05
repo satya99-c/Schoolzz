@@ -23,7 +23,10 @@ export async function ensureOrgTablesExist(orgName) {
   if (!isSupabaseConfigured || !supabase) return;
   const tableNames = getOrgTableNames(orgName);
   try {
-    await supabase.rpc('create_organization_tables', { org_name: tableNames.orgTable });
+    const { error } = await supabase.rpc('create_organization_tables', { org_name: tableNames.orgTable });
+    if (error) {
+      console.warn(`Supabase RPC create_organization_tables error for ${tableNames.orgTable}:`, error);
+    }
   } catch (e) {
     console.warn('Supabase RPC create_organization_tables notice:', e);
   }

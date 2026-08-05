@@ -135,7 +135,7 @@ export function AttendanceProvider({ children }) {
           // 1. Ensure dynamic PostgreSQL tables are created in Supabase
           await ensureOrgTablesExist(newSch.name);
 
-          // 2. Insert into OrganizationName table
+          // 2. Insert into OrganizationName table (e.g. testneworg)
           const orgRow = {
             code: newSch.code,
             name: newSch.name,
@@ -154,7 +154,7 @@ export function AttendanceProvider({ children }) {
             city: newSch.city
           });
 
-          // 3. Insert into OrganizationName_Principal table
+          // 3. Insert into OrganizationName_Principal table (e.g. testneworg_principal)
           const principalRow = {
             id: newPrincipal.id,
             name: newPrincipal.name,
@@ -167,6 +167,7 @@ export function AttendanceProvider({ children }) {
           const { error: prinErr } = await supabase.from(tableNames.principalTable).upsert(principalRow);
           if (prinErr) console.warn(`Supabase ${tableNames.principalTable} insert error:`, prinErr);
 
+          await supabase.from('principals').upsert(principalRow);
           await supabase.from('teachers').upsert({
             id: newPrincipal.id,
             username: newPrincipal.username,
@@ -178,7 +179,10 @@ export function AttendanceProvider({ children }) {
           });
 
           if (!orgErr && !prinErr) {
-            showToast(`Organization & Principal accounts created in ${tableNames.orgTable} database!`, 'success');
+            showToast(`Organization & Principal synced to '${tableNames.orgTable}' & '${tableNames.principalTable}' database!`, 'success');
+          } else {
+            const errNotice = orgErr?.message || prinErr?.message || 'Database notice';
+            showToast(`Organization registered locally! (Database notice: ${errNotice})`, 'info');
           }
         } catch (e) {
           console.warn('Supabase org/principal insert notice:', e);
@@ -848,10 +852,17 @@ export function AttendanceProvider({ children }) {
         };
 
         // Insert into OrganizationName_Teachers table in Database
-        await supabase.from(tableNames.teachersTable).insert(teacherRow);
-        await supabase.from('teachers').insert(teacherRow);
+        const { error: dynErr } = await supabase.from(tableNames.teachersTable).insert(teacherRow);
+        if (dynErr) console.warn(`Supabase ${tableNames.teachersTable} insert notice:`, dynErr);
 
-        showToast(`New Teacher '${newTeacher.name}' onboarded & synced to ${tableNames.teachersTable} database!`, 'success');
+        const { error: gErr } = await supabase.from('teachers').insert(teacherRow);
+        if (gErr) console.warn('Supabase teachers global insert notice:', gErr);
+
+        if (!dynErr) {
+          showToast(`New Teacher '${newTeacher.name}' onboarded & synced to '${tableNames.teachersTable}' database!`, 'success');
+        } else {
+          showToast(`New Teacher '${newTeacher.name}' onboarded locally! (Database notice: ${dynErr.message})`, 'info');
+        }
       } catch (e) {
         console.warn('Supabase onboard teacher error:', e);
         showToast(`New Teacher '${newTeacher.name}' onboarded successfully!`, 'success');
