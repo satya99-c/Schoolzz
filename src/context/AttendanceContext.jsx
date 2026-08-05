@@ -953,32 +953,33 @@ export function AttendanceProvider({ children }) {
 
     const classObj = classes.find(c => c.id === classId);
     const className = classObj ? classObj.name : classId;
+    const sameNameClassIds = classes.filter(c => c.name === className).map(c => c.id);
 
     setTeachers(prev => prev.map(t => {
       if (t.id === teacherId) {
         const currentAssigned = t.assignedClasses || [];
-        const newAssigned = currentAssigned.includes(classId) ? currentAssigned : [...currentAssigned, classId].slice(0, 2);
+        const newAssigned = Array.from(new Set([...currentAssigned, ...sameNameClassIds])).slice(0, 2);
         return {
           ...t,
           classTeacherClassId: classId,
           assignedClasses: newAssigned
         };
       }
-      if (t.classTeacherClassId === classId && t.id !== teacherId) {
+      if ((t.classTeacherClassId === classId || sameNameClassIds.includes(t.classTeacherClassId)) && t.id !== teacherId) {
         return { ...t, classTeacherClassId: null };
       }
       return t;
     }));
 
     setClasses(prev => prev.map(c => {
-      if (c.id === classId) {
+      if (c.name === className || c.id === classId) {
         return { ...c, teacherId: targetTeacher.id, classTeacher: targetTeacher.name };
       }
       return c;
     }));
 
     if (isSupabaseConfigured && supabase) {
-      supabase.from('classes').update({ class_teacher: targetTeacher.name, teacher_id: targetTeacher.id }).eq('id', classId);
+      supabase.from('classes').update({ class_teacher: targetTeacher.name, teacher_id: targetTeacher.id }).in('id', sameNameClassIds);
       supabase.from('teachers').update({ class_teacher_class_id: classId }).eq('id', teacherId);
     }
 
