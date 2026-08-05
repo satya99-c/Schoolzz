@@ -136,12 +136,18 @@ export function AttendanceProvider({ children }) {
           await ensureOrgTablesExist(newSch.name);
 
           // 2. Insert into OrganizationName table
-          await supabase.from(tableNames.orgTable).upsert({
+          const orgRow = {
             code: newSch.code,
             name: newSch.name,
             city: newSch.city,
+            admin_name: schoolData.adminName || 'Admin',
+            admin_email: schoolData.adminEmail || '',
             registered_at: new Date().toISOString()
-          });
+          };
+
+          const { error: orgErr } = await supabase.from(tableNames.orgTable).upsert(orgRow);
+          if (orgErr) console.warn(`Supabase ${tableNames.orgTable} insert error:`, orgErr);
+
           await supabase.from('organizations').upsert({
             code: newSch.code,
             name: newSch.name,
@@ -149,14 +155,31 @@ export function AttendanceProvider({ children }) {
           });
 
           // 3. Insert into OrganizationName_Principal table
-          await supabase.from(tableNames.principalTable).upsert({
+          const principalRow = {
             id: newPrincipal.id,
             name: newPrincipal.name,
             username: newPrincipal.username,
             password: newPrincipal.password,
             role: 'principal',
             school_code: newPrincipal.schoolCode
+          };
+
+          const { error: prinErr } = await supabase.from(tableNames.principalTable).upsert(principalRow);
+          if (prinErr) console.warn(`Supabase ${tableNames.principalTable} insert error:`, prinErr);
+
+          await supabase.from('teachers').upsert({
+            id: newPrincipal.id,
+            username: newPrincipal.username,
+            password: newPrincipal.password,
+            name: newPrincipal.name,
+            role: 'principal',
+            avatar: newPrincipal.avatar,
+            assigned_classes: []
           });
+
+          if (!orgErr && !prinErr) {
+            showToast(`Organization & Principal accounts created in ${tableNames.orgTable} database!`, 'success');
+          }
         } catch (e) {
           console.warn('Supabase org/principal insert notice:', e);
         }

@@ -12,9 +12,13 @@ BEGIN
       code text PRIMARY KEY,
       name text,
       city text,
+      admin_name text,
+      admin_email text,
       registered_at timestamp with time zone DEFAULT now()
     );
   ', org_name);
+  EXECUTE format('GRANT ALL ON TABLE %I TO anon, authenticated, service_role;', org_name);
+  EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY;', org_name);
 
   -- 2. Create Principal Table (<OrgName>_Principal)
   EXECUTE format('
@@ -24,9 +28,12 @@ BEGIN
       username text,
       password text,
       role text,
-      school_code text
+      school_code text,
+      created_at timestamp with time zone DEFAULT now()
     );
   ', org_name || '_Principal');
+  EXECUTE format('GRANT ALL ON TABLE %I TO anon, authenticated, service_role;', org_name || '_Principal');
+  EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY;', org_name || '_Principal');
 
   -- 3. Create Teachers Table (<OrgName>_Teachers)
   EXECUTE format('
@@ -38,9 +45,12 @@ BEGIN
       role text,
       avatar text,
       assigned_classes jsonb,
-      school_code text
+      school_code text,
+      created_at timestamp with time zone DEFAULT now()
     );
   ', org_name || '_Teachers');
+  EXECUTE format('GRANT ALL ON TABLE %I TO anon, authenticated, service_role;', org_name || '_Teachers');
+  EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY;', org_name || '_Teachers');
 
   -- 4. Create Students Table (<OrgName>_Students)
   EXECUTE format('
@@ -56,8 +66,11 @@ BEGIN
       days_present numeric,
       days_absent numeric,
       days_leave numeric,
-      school_code text
+      school_code text,
+      created_at timestamp with time zone DEFAULT now()
     );
   ', org_name || '_Students');
+  EXECUTE format('GRANT ALL ON TABLE %I TO anon, authenticated, service_role;', org_name || '_Students');
+  EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY;', org_name || '_Students');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
