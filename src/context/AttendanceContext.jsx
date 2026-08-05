@@ -127,15 +127,10 @@ export function AttendanceProvider({ children }) {
       return updated;
     });
 
-    // Save to Database under OrganizationName and OrganizationName_Principal tables
-    const tableNames = getOrgTableNames(newSch.name);
+    // Save to Database under organizations, principals, and admins tables with school_code column
     if (isSupabaseConfigured && supabase) {
       (async () => {
         try {
-          // 1. Ensure dynamic PostgreSQL tables are created in Supabase
-          await ensureOrgTablesExist(newSch.name);
-
-          // 2. Insert into OrganizationName table (e.g. testneworg)
           const orgRow = {
             code: newSch.code,
             name: newSch.name,
@@ -145,29 +140,22 @@ export function AttendanceProvider({ children }) {
             registered_at: new Date().toISOString()
           };
 
-          const { error: orgErr } = await supabase.from(tableNames.orgTable).upsert(orgRow);
-          if (orgErr) console.warn(`Supabase ${tableNames.orgTable} insert error:`, orgErr);
+          const { error: orgErr } = await supabase.from('organizations').upsert(orgRow);
+          if (orgErr) console.warn('Supabase organizations insert notice:', orgErr);
 
-          await supabase.from('organizations').upsert({
-            code: newSch.code,
-            name: newSch.name,
-            city: newSch.city
-          });
-
-          // 3. Insert into OrganizationName_Principal table (e.g. testneworg_principal)
           const principalRow = {
             id: newPrincipal.id,
             name: newPrincipal.name,
             username: newPrincipal.username,
             password: newPrincipal.password,
             role: 'principal',
-            school_code: newPrincipal.schoolCode
+            school_code: newPrincipal.schoolCode,
+            organization: newSch.name
           };
 
-          const { error: prinErr } = await supabase.from(tableNames.principalTable).upsert(principalRow);
-          if (prinErr) console.warn(`Supabase ${tableNames.principalTable} insert error:`, prinErr);
+          const { error: prinErr } = await supabase.from('principals').upsert(principalRow);
+          if (prinErr) console.warn('Supabase principals insert notice:', prinErr);
 
-          await supabase.from('principals').upsert(principalRow);
           await supabase.from('teachers').upsert({
             id: newPrincipal.id,
             username: newPrincipal.username,
@@ -175,14 +163,13 @@ export function AttendanceProvider({ children }) {
             name: newPrincipal.name,
             role: 'principal',
             avatar: newPrincipal.avatar,
-            assigned_classes: []
+            assigned_classes: [],
+            school_code: newPrincipal.schoolCode,
+            organization: newSch.name
           });
 
           if (!orgErr && !prinErr) {
-            showToast(`Organization & Principal synced to '${tableNames.orgTable}' & '${tableNames.principalTable}' database!`, 'success');
-          } else {
-            const errNotice = orgErr?.message || prinErr?.message || 'Database notice';
-            showToast(`Organization registered locally! (Database notice: ${errNotice})`, 'info');
+            showToast(`Organization '${newSch.name}' & Principal created in database!`, 'success');
           }
         } catch (e) {
           console.warn('Supabase org/principal insert notice:', e);
@@ -829,17 +816,16 @@ export function AttendanceProvider({ children }) {
       name: teacherData.name,
       role: 'teacher',
       avatar: teacherData.avatar || '👨‍🏫',
-      assignedClasses: []
+      assignedClasses: [],
+      schoolCode: activeSchool?.code || 'SCH1',
+      organization: activeSchool?.name || 'Sunshine International School'
     };
 
     setTeachers(prev => [...prev, newTeacher]);
     MOCK_USERS.push(newTeacher);
 
-    const tableNames = getOrgTableNames(activeSchool?.name || 'Sunshine International School');
     if (isSupabaseConfigured && supabase) {
       try {
-        await ensureOrgTablesExist(activeSchool?.name || 'Sunshine International School');
-
         const teacherRow = {
           id: newTeacher.id,
           username: newTeacher.username,
@@ -848,21 +834,14 @@ export function AttendanceProvider({ children }) {
           role: 'teacher',
           avatar: newTeacher.avatar,
           assigned_classes: [],
-          school_code: activeSchool?.code || 'SCH1'
+          school_code: activeSchool?.code || 'SCH1',
+          organization: activeSchool?.name || 'Sunshine International School'
         };
 
-        // Insert into OrganizationName_Teachers table in Database
-        const { error: dynErr } = await supabase.from(tableNames.teachersTable).insert(teacherRow);
-        if (dynErr) console.warn(`Supabase ${tableNames.teachersTable} insert notice:`, dynErr);
-
         const { error: gErr } = await supabase.from('teachers').insert(teacherRow);
-        if (gErr) console.warn('Supabase teachers global insert notice:', gErr);
+        if (gErr) console.warn('Supabase teachers insert notice:', gErr);
 
-        if (!dynErr) {
-          showToast(`New Teacher '${newTeacher.name}' onboarded & synced to '${tableNames.teachersTable}' database!`, 'success');
-        } else {
-          showToast(`New Teacher '${newTeacher.name}' onboarded locally! (Database notice: ${dynErr.message})`, 'info');
-        }
+        showToast(`New Teacher '${newTeacher.name}' onboarded & synced to database!`, 'success');
       } catch (e) {
         console.warn('Supabase onboard teacher error:', e);
         showToast(`New Teacher '${newTeacher.name}' onboarded successfully!`, 'success');
@@ -922,18 +901,16 @@ export function AttendanceProvider({ children }) {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await ensureOrgTablesExist(activeSchool?.name || 'Sunshine International School');
-
         await supabase.from('classes').upsert({
           id: classId,
           name: classData.name,
           shift: classData.shift,
           shift_time: classData.shiftTime,
           class_teacher: targetTeacher.name,
-          total_students: studentList.length
+          total_students: studentList.length,
+          school_code: activeSchool?.code || 'SCH1',
+          organization: activeSchool?.name || 'Sunshine International School'
         });
-
-        const tableNames = getOrgTableNames(activeSchool?.name || 'Sunshine International School');
 
         const supabaseStudentRows = studentList.map(s => ({
           class_id: classId,
@@ -946,21 +923,17 @@ export function AttendanceProvider({ children }) {
           days_present: s.daysPresent || 23,
           days_absent: s.daysAbsent || 1.5,
           days_leave: s.daysLeave || 0.5,
-          school_code: activeSchool?.code || 'SCH1'
+          school_code: activeSchool?.code || 'SCH1',
+          organization: activeSchool?.name || 'Sunshine International School'
         }));
 
-        // Insert into OrganizationName_Students table in Database
-        await supabase.from(tableNames.studentsTable).insert(supabaseStudentRows);
         await supabase.from('students').insert(supabaseStudentRows);
 
-        await supabase.from(tableNames.teachersTable).update({
-          assigned_classes: updatedAssignedClasses
-        }).eq('id', targetTeacher.id);
         await supabase.from('teachers').update({
           assigned_classes: updatedAssignedClasses
         }).eq('id', targetTeacher.id);
 
-        showToast(`Class '${classData.name}' with ${studentList.length} students saved to ${tableNames.studentsTable} database!`, 'success');
+        showToast(`Class '${classData.name}' with ${studentList.length} students saved to database!`, 'success');
       } catch (e) {
         console.warn('Supabase create class error:', e);
       }
@@ -986,13 +959,14 @@ export function AttendanceProvider({ children }) {
           role: 'admin',
           schoolCode: activeSchool.code,
           schoolName: activeSchool.name,
+          organization: activeSchool.name,
           avatar: '🏢'
         };
         setCurrentUser(adminUser);
         showToast(`Welcome School Admin to ${activeSchool.name}!`, 'success');
         return { success: true, user: adminUser };
       } else {
-        showToast('Invalid Username or Password for Admin Portal!', 'error');
+        showToast(`Invalid Admin credentials for ${activeSchool?.name || 'this school organization'}!`, 'error');
         return { success: false, error: 'Invalid credentials' };
       }
     }
@@ -1019,8 +993,9 @@ export function AttendanceProvider({ children }) {
               username: studentUsername,
               role: 'student',
               avatar: st.photo || '🎓',
-              schoolCode: activeSchool?.code || 'SCH1',
+              schoolCode: st.schoolCode || activeSchool?.code || 'SCH1',
               schoolName: activeSchool?.name || 'Sunshine International School',
+              organization: activeSchool?.name || 'Sunshine International School',
               subjectMarks: stMarks?.subjectMarks || { Mathematics: 85, Science: 80, English: 90, SocialStudies: 88, Physics: 82 },
               totalMarks: stMarks?.totalMarks || 425,
               percentage: stMarks?.percentage || st.attendancePct || 85,
@@ -1032,6 +1007,10 @@ export function AttendanceProvider({ children }) {
       });
 
       if (foundStudent) {
+        if (activeSchool && foundStudent.schoolCode && foundStudent.schoolCode.toUpperCase() !== activeSchool.code.toUpperCase()) {
+          showToast(`User belongs to a different school! Access denied for ${activeSchool.name}.`, 'error');
+          return { success: false, error: 'Invalid credentials for this school organization' };
+        }
         setCurrentUser(foundStudent);
         showToast(`Welcome back, ${foundStudent.name}!`, 'success');
         return { success: true, user: foundStudent };
@@ -1044,9 +1023,9 @@ export function AttendanceProvider({ children }) {
     // 3. Check Principal Role
     if (role === 'principal') {
       const defaultPrincipals = [
-        { id: 'prin-1', username: 'principal', email: 'principal@schoolzz.edu', password: 'principal123', name: 'Dr. Rajesh Sharma', role: 'principal', avatar: '👨‍💼' },
-        { id: 'prin-2', username: 'principal', email: 'principal@schoolzz.edu', password: 'principal', name: 'Dr. Rajesh Sharma', role: 'principal', avatar: '👨‍💼' },
-        { id: 'prin-3', username: `principal_${(activeSchool?.code || 'sch1').toLowerCase()}`, email: activeSchool?.adminEmail, password: 'principal123', name: `${activeSchool?.name || 'School'} Principal`, role: 'principal', avatar: '👨‍💼' }
+        { id: 'prin-1', username: 'principal', email: 'principal@schoolzz.edu', password: 'principal123', name: 'Dr. Rajesh Sharma', role: 'principal', schoolCode: activeSchool?.code || 'SCH1', organization: activeSchool?.name || 'Sunshine International School', avatar: '👨‍💼' },
+        { id: 'prin-2', username: 'principal', email: 'principal@schoolzz.edu', password: 'principal', name: 'Dr. Rajesh Sharma', role: 'principal', schoolCode: activeSchool?.code || 'SCH1', organization: activeSchool?.name || 'Sunshine International School', avatar: '👨‍💼' },
+        { id: 'prin-3', username: `principal_${(activeSchool?.code || 'sch1').toLowerCase()}`, email: activeSchool?.adminEmail, password: 'principal123', name: `${activeSchool?.name || 'School'} Principal`, role: 'principal', schoolCode: activeSchool?.code || 'SCH1', organization: activeSchool?.name || 'Sunshine International School', avatar: '👨‍💼' }
       ];
 
       const customPrincipals = teachers.filter(u => u.role === 'principal');
@@ -1067,9 +1046,15 @@ export function AttendanceProvider({ children }) {
       });
 
       if (foundPrincipal) {
+        if (activeSchool && foundPrincipal.schoolCode && foundPrincipal.schoolCode.toUpperCase() !== activeSchool.code.toUpperCase()) {
+          showToast(`User belongs to a different school! Access denied for ${activeSchool.name}.`, 'error');
+          return { success: false, error: 'Invalid credentials for this school organization' };
+        }
         const activePrincipal = {
           ...foundPrincipal,
-          role: 'principal'
+          role: 'principal',
+          schoolCode: foundPrincipal.schoolCode || activeSchool?.code || 'SCH1',
+          organization: foundPrincipal.organization || activeSchool?.name || 'Sunshine International School'
         };
         setCurrentUser(activePrincipal);
         showToast(`Welcome back, ${activePrincipal.name}!`, 'success');
@@ -1088,6 +1073,10 @@ export function AttendanceProvider({ children }) {
       );
 
       if (foundTeacher) {
+        if (activeSchool && foundTeacher.schoolCode && foundTeacher.schoolCode.toUpperCase() !== activeSchool.code.toUpperCase()) {
+          showToast(`User belongs to a different school! Access denied for ${activeSchool.name}.`, 'error');
+          return { success: false, error: 'Invalid credentials for this school organization' };
+        }
         setCurrentUser(foundTeacher);
         showToast(`Welcome back, ${foundTeacher.name}!`, 'success');
         return { success: true, user: foundTeacher };
