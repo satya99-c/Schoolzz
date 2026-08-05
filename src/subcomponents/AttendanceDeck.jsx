@@ -144,7 +144,11 @@ export default function AttendanceDeck({
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 text-xs text-amber-900 flex items-center space-x-2.5 shadow-sm">
           <Lock className="w-4 h-4 text-amber-600 flex-shrink-0" />
           <span>
-            Attendance is locked after submission. To change a student's status, <strong>Principal must decline the approval</strong>.
+            {submissionStatus === 'APPROVED' ? (
+              <>Attendance is <strong>Approved by Principal</strong> and locked. To make edits, Principal must decline the approval.</>
+            ) : (
+              <>Attendance is locked after submission. To change a student's status, <strong>Principal must decline the approval</strong>.</>
+            )}
           </span>
         </div>
       )}
@@ -248,7 +252,7 @@ export default function AttendanceDeck({
                   ) : (
                     <span className="text-[11px] text-emerald-200/70 font-medium flex items-center space-x-1">
                       <Lock className="w-3 h-3" />
-                      <span>Locked (Principal approval pending)</span>
+                      <span>Locked ({submissionStatus === 'APPROVED' ? 'Principal Approved' : 'Principal approval pending'})</span>
                     </span>
                   )}
                 </div>
@@ -276,7 +280,7 @@ export default function AttendanceDeck({
                   ) : (
                     <span className="text-[11px] text-emerald-200/70 font-medium flex items-center space-x-1">
                       <Lock className="w-3 h-3" />
-                      <span>Locked (Principal approval pending)</span>
+                      <span>Locked ({submissionStatus === 'APPROVED' ? 'Principal Approved' : 'Principal approval pending'})</span>
                     </span>
                   )}
                 </div>
