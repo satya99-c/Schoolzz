@@ -412,14 +412,23 @@ export default function TeacherPortal() {
 
       {/* TAB 3: ACADEMIC EXAM SCORECARDS & MARKS ENTRY */}
       {activeTab === 'marks' && (() => {
-        // Scoped ONLY to classes where currentUser is designated as Class Teacher by Principal!
-        const teacherClassList = classes.filter(c =>
-          c.id === currentUser?.classTeacherClassId ||
-          c.teacherId === currentUser?.id ||
-          c.classTeacher === currentUser?.name
-        );
+        // Scoped ONLY to the current class section assigned to currentUser as Class Teacher by Principal!
+        const activeClassTeacherClassId = currentUser?.classTeacherClassId;
+        const activeClassName = activeClassTeacherClassId 
+          ? classes.find(c => c.id === activeClassTeacherClassId)?.name 
+          : null;
 
-        // Deduplicate by class name (e.g. Class 10 - Section A)
+        const teacherClassList = classes.filter(c => {
+          if (activeClassName) {
+            return c.name === activeClassName;
+          }
+          if (activeClassTeacherClassId) {
+            return c.id === activeClassTeacherClassId;
+          }
+          return c.classTeacher === currentUser?.name || c.teacherId === currentUser?.id;
+        });
+
+        // Deduplicate by class name (e.g. Class 10 - Section B)
         const uniqueClassTeacherClasses = Array.from(new Set(teacherClassList.map(c => c.name)))
           .map(name => teacherClassList.find(c => c.name === name));
 

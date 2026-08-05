@@ -1031,8 +1031,13 @@ export function AttendanceProvider({ children }) {
     });
 
     const updatedClasses = classes.map(c => {
+      // Set targetTeacher as Class Teacher for the newly assigned class
       if (c.name === className || c.id === classId) {
         return { ...c, teacherId: targetTeacher.id, classTeacher: targetTeacher.name };
+      }
+      // If this was a previous class assigned to targetTeacher, clear it so old class is no longer assigned to this teacher!
+      if (c.teacherId === targetTeacher.id || c.classTeacher === targetTeacher.name) {
+        return { ...c, teacherId: null, classTeacher: 'Unassigned' };
       }
       return c;
     });
