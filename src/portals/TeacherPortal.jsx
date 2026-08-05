@@ -410,67 +410,89 @@ export default function TeacherPortal() {
       {/* TAB 2: PERFORMANCE REPORTS */}
       {activeTab === 'reports' && <TeacherReports />}
 
-      {/* TAB 3: ACADEMIC EXAM MARKS & SCORECARDS ENTRY */}
-      {activeTab === 'marks' && (
-        <div className="space-y-6 animate-fade-in">
-          
-          {/* VIEW 1: CLASS SELECTION CARDS FOR MARKS ENTRY */}
-          {!selectedMarksClassId && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md space-y-4">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 flex items-center space-x-2">
-                  <Award className="w-5 h-5 text-[#1b4d3e]" />
-                  <span>Select Class to Enter or Edit Exam Marks</span>
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Click on any class to view its student roster and input subject marks for examinations.
-                </p>
-              </div>
+      {/* TAB 3: ACADEMIC EXAM SCORECARDS & MARKS ENTRY */}
+      {activeTab === 'marks' && (() => {
+        // Scoped ONLY to classes where currentUser is designated as Class Teacher by Principal!
+        const teacherClassList = classes.filter(c =>
+          c.id === currentUser?.classTeacherClassId ||
+          c.teacherId === currentUser?.id ||
+          c.classTeacher === currentUser?.name
+        );
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {assignedClasses.map(cls => {
-                  const classStudents = students[cls.id] || [];
-                  const classMarksCount = (studentMarks[cls.id] || []).length;
+        // Deduplicate by class name (e.g. Class 10 - Section A)
+        const uniqueClassTeacherClasses = Array.from(new Set(teacherClassList.map(c => c.name)))
+          .map(name => teacherClassList.find(c => c.name === name));
 
-                  return (
-                    <div
-                      key={cls.id}
-                      className="border border-slate-200 rounded-2xl p-5 hover:border-[#1b4d3e] transition-all bg-gradient-to-br from-white to-slate-50 flex flex-col justify-between space-y-4 shadow-sm"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <span className="inline-block px-3 py-1 bg-emerald-100 text-[#1b4d3e] text-xs font-bold rounded-full mb-1">
-                            {cls.name}
-                          </span>
-                          <div className="text-xs font-bold text-slate-500 flex items-center space-x-1.5">
-                            <Users className="w-3.5 h-3.5" />
-                            <span>{classStudents.length} Students Enrolled</span>
+        return (
+          <div className="space-y-6 animate-fade-in">
+            
+            {/* VIEW 1: CLASS SELECTION CARDS FOR MARKS ENTRY */}
+            {!selectedMarksClassId && (
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md space-y-4">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 flex items-center space-x-2">
+                    <Award className="w-5 h-5 text-[#1b4d3e]" />
+                    <span>Select Class to Enter or Edit Exam Marks</span>
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Showing class section assigned to you as Class Teacher by the Principal.
+                  </p>
+                </div>
+
+                {uniqueClassTeacherClasses.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {uniqueClassTeacherClasses.map(cls => {
+                      const classStudents = students[cls.id] || [];
+                      const classMarksCount = (studentMarks[cls.id] || []).length;
+
+                      return (
+                        <div
+                          key={cls.id}
+                          className="border border-slate-200 rounded-2xl p-5 hover:border-[#1b4d3e] transition-all bg-gradient-to-br from-white to-slate-50 flex flex-col justify-between space-y-4 shadow-sm"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <span className="inline-block px-3 py-1 bg-emerald-100 text-[#1b4d3e] text-xs font-bold rounded-full mb-1">
+                                {cls.name}
+                              </span>
+                              <div className="text-xs font-bold text-slate-500 flex items-center space-x-1.5">
+                                <Users className="w-3.5 h-3.5" />
+                                <span>{classStudents.length} Students Enrolled</span>
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md">
+                              {classMarksCount} Scorecards Created
+                            </span>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                            <div className="text-xs text-slate-600 font-medium">
+                              Class Teacher: <span className="font-bold text-[#1b4d3e]">{cls.classTeacher}</span>
+                            </div>
+
+                            <button
+                              onClick={() => setSelectedMarksClassId(cls.id)}
+                              className="px-4 py-2.5 bg-[#1b4d3e] hover:bg-[#143c30] text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
+                            >
+                              <span>Open Class Roster</span>
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
-                        <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md">
-                          {classMarksCount} Scorecards Created
-                        </span>
-                      </div>
-
-                      <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-                        <div className="text-xs text-slate-600 font-medium">
-                          Teacher: <span className="font-bold text-[#1b4d3e]">{cls.classTeacher}</span>
-                        </div>
-
-                        <button
-                          onClick={() => setSelectedMarksClassId(cls.id)}
-                          className="px-4 py-2.5 bg-[#1b4d3e] hover:bg-[#143c30] text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
-                        >
-                          <span>Open Class Roster</span>
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="bg-amber-50 border border-amber-200 p-6 rounded-2xl text-center space-y-2">
+                    <div className="text-2xl">⚠️</div>
+                    <h3 className="text-sm font-bold text-amber-900">No Class Teacher Assignment Found</h3>
+                    <p className="text-xs text-amber-800 max-w-md mx-auto">
+                      You have not been assigned as Class Teacher for any class section yet. Please contact your Principal to assign you as Class Teacher to add academic exam marks.
+                    </p>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            )}
 
           {/* VIEW 2: CLASS ROSTER PAGE FOR MARKS ENTRY */}
           {selectedMarksClassId && (
@@ -696,7 +718,8 @@ export default function TeacherPortal() {
           )}
 
         </div>
-      )}
+        );
+      })()}
 
     </div>
   );
