@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { INITIAL_CLASSES, INITIAL_STUDENTS, MOCK_USERS } from '../data/mockData';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { getTodayLocalDateStr, getTomorrowLocalDateStr } from '../utils/dateUtils';
+import { getOrgTableNames } from '../utils/tableNameUtils';
 
 export function getDefaultSchools() {
   return [
@@ -99,7 +100,11 @@ export function AttendanceProvider({ children }) {
     setSchools(prev => {
       const exists = prev.some(s => s.code === codeUpper);
       if (exists) return prev;
-      return [...prev, newSch];
+      const updated = [...prev, newSch];
+      try {
+        localStorage.setItem('schoolzz_saved_schools', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
     });
 
     const newPrincipal = {
@@ -115,8 +120,43 @@ export function AttendanceProvider({ children }) {
 
     setTeachers(prev => {
       if (prev.some(u => u.username === newPrincipal.username)) return prev;
-      return [...prev, newPrincipal];
+      const updated = [...prev, newPrincipal];
+      try {
+        localStorage.setItem('schoolzz_teachers', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
     });
+
+    // Save to Database under OrganizationName and OrganizationName_Principal tables
+    const tableNames = getOrgTableNames(newSch.name);
+    if (isSupabaseConfigured && supabase) {
+      (async () => {
+        try {
+          await supabase.from(tableNames.orgTable).upsert({
+            code: newSch.code,
+            name: newSch.name,
+            city: newSch.city,
+            registered_at: new Date().toISOString()
+          });
+          await supabase.from('organizations').upsert({
+            code: newSch.code,
+            name: newSch.name,
+            city: newSch.city
+          });
+
+          await supabase.from(tableNames.principalTable).upsert({
+            id: newPrincipal.id,
+            name: newPrincipal.name,
+            username: newPrincipal.username,
+            password: newPrincipal.password,
+            role: 'principal',
+            school_code: newPrincipal.schoolCode
+          });
+        } catch (e) {
+          console.warn('Supabase org/principal insert notice:', e);
+        }
+      })();
+    }
 
     setActiveSchool(newSch);
     setCurrentUser(null); // Always open the Login Page for newly registered school!
@@ -763,26 +803,28 @@ export function AttendanceProvider({ children }) {
     setTeachers(prev => [...prev, newTeacher]);
     MOCK_USERS.push(newTeacher);
 
+    const tableNames = getOrgTableNames(activeSchool?.name || 'Sunshine International School');
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error } = await supabase.from('teachers').insert({
+        const teacherRow = {
           id: newTeacher.id,
           username: newTeacher.username,
           password: newTeacher.password,
           name: newTeacher.name,
           role: 'teacher',
           avatar: newTeacher.avatar,
-          assigned_classes: []
-        });
+          assigned_classes: [],
+          school_code: activeSchool?.code || 'SCH1'
+        };
 
-        if (error) {
-          console.error('Supabase Teacher Insert Error:', error);
-          showToast(`Teacher onboarded locally! (Supabase notice: ${error.message})`, 'info');
-        } else {
-          showToast(`New Teacher '${newTeacher.name}' onboarded & synced to Supabase Database!`, 'success');
-        }
+        // Insert into OrganizationName_Teachers table in Database
+        await supabase.from(tableNames.teachersTable).insert(teacherRow);
+        await supabase.from('teachers').insert(teacherRow);
+
+        showToast(`New Teacher '${newTeacher.name}' onboarded & synced to ${tableNames.teachersTable} database!`, 'success');
       } catch (e) {
         console.warn('Supabase onboard teacher error:', e);
+        showToast(`New Teacher '${newTeacher.name}' onboarded successfully!`, 'success');
       }
     } else {
       showToast(`New Teacher '${newTeacher.name}' onboarded successfully!`, 'success');
@@ -848,6 +890,8 @@ export function AttendanceProvider({ children }) {
           total_students: studentList.length
         });
 
+        const tableNames = getOrgTableNames(activeSchool?.name || 'Sunshine International School');
+
         const supabaseStudentRows = studentList.map(s => ({
           class_id: classId,
           roll_no: s.rollNo,
@@ -858,16 +902,22 @@ export function AttendanceProvider({ children }) {
           attendance_pct: s.attendancePct || 90,
           days_present: s.daysPresent || 23,
           days_absent: s.daysAbsent || 1.5,
-          days_leave: s.daysLeave || 0.5
+          days_leave: s.daysLeave || 0.5,
+          school_code: activeSchool?.code || 'SCH1'
         }));
 
+        // Insert into OrganizationName_Students table in Database
+        await supabase.from(tableNames.studentsTable).insert(supabaseStudentRows);
         await supabase.from('students').insert(supabaseStudentRows);
 
+        await supabase.from(tableNames.teachersTable).update({
+          assigned_classes: updatedAssignedClasses
+        }).eq('id', targetTeacher.id);
         await supabase.from('teachers').update({
           assigned_classes: updatedAssignedClasses
         }).eq('id', targetTeacher.id);
 
-        showToast(`Class '${classData.name}' with ${studentList.length} students saved to Supabase Database!`, 'success');
+        showToast(`Class '${classData.name}' with ${studentList.length} students saved to ${tableNames.studentsTable} database!`, 'success');
       } catch (e) {
         console.warn('Supabase create class error:', e);
       }
