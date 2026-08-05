@@ -681,7 +681,8 @@ export function AttendanceProvider({ children }) {
           name: t.name,
           role: t.role || 'teacher',
           avatar: t.avatar || '👨‍🏫',
-          assignedClasses: t.assigned_classes || []
+          assignedClasses: t.assigned_classes || [],
+          classTeacherClassId: t.class_teacher_class_id || t.classTeacherClassId || null
         }));
         setTeachers(mappedTeachers);
       }
@@ -694,7 +695,8 @@ export function AttendanceProvider({ children }) {
           name: c.name,
           shift: c.shift,
           shiftTime: c.shift_time,
-          classTeacher: c.class_teacher,
+          teacherId: c.teacher_id || c.teacherId,
+          classTeacher: c.class_teacher || c.classTeacher,
           totalStudents: c.total_students || 15
         }));
         setClasses(mappedClasses);

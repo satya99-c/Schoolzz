@@ -408,7 +408,11 @@ export default function PrincipalPortal() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {teachers.map(teacher => {
               const assignedCount = teacher.assignedClasses ? teacher.assignedClasses.length : 0;
-              const classTeacherObj = classes.find(c => c.id === teacher.classTeacherClassId || c.classTeacher === teacher.name);
+              const classTeacherObj = classes.find(c => 
+                (teacher.classTeacherClassId && c.id === teacher.classTeacherClassId) || 
+                (c.teacherId && (c.teacherId === teacher.id || c.teacherId === teacher.username)) || 
+                (c.classTeacher && c.classTeacher === teacher.name)
+              );
 
               return (
                 <div key={teacher.id} className="bg-white border border-slate-200 rounded-3xl p-5 space-y-3 shadow-md relative hover:border-[#1b4d3e] transition-all flex flex-col justify-between">
