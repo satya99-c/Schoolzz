@@ -183,7 +183,7 @@ export function AttendanceProvider({ children }) {
     return newSch;
   }, []);
 
-  // Teachers state
+  // Teachers state with persistent storage
   const [teachers, setTeachers] = useState(() => {
     try {
       const saved = localStorage.getItem('schoolzz_teachers');
@@ -195,7 +195,7 @@ export function AttendanceProvider({ children }) {
     return MOCK_USERS.filter(u => u.role === 'teacher');
   });
 
-  // Classes state
+  // Classes state with persistent storage
   const [classes, setClasses] = useState(() => {
     try {
       const saved = localStorage.getItem('schoolzz_classes');
@@ -207,8 +207,36 @@ export function AttendanceProvider({ children }) {
     return INITIAL_CLASSES;
   });
 
+  // Automatically persist teachers to localStorage so Principal assignments are locked permanently
+  useEffect(() => {
+    try {
+      localStorage.setItem('schoolzz_teachers', JSON.stringify(teachers));
+    } catch (e) {}
+  }, [teachers]);
+
+  // Automatically persist classes to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('schoolzz_classes', JSON.stringify(classes));
+    } catch (e) {}
+  }, [classes]);
+
   // Current logged in user (ALWAYS defaults to null on page load so shareable links ALWAYS display the Login Page!)
   const [currentUser, setCurrentUser] = useState(null);
+
+  // Sync active currentUser when teacher assignments are modified by Principal
+  useEffect(() => {
+    if (currentUser && currentUser.role === 'teacher') {
+      const updatedTeacher = teachers.find(t => t.id === currentUser.id || t.username === currentUser.username);
+      if (updatedTeacher && (updatedTeacher.classTeacherClassId !== currentUser.classTeacherClassId || updatedTeacher.assignedClasses !== currentUser.assignedClasses)) {
+        setCurrentUser(prev => ({
+          ...prev,
+          classTeacherClassId: updatedTeacher.classTeacherClassId,
+          assignedClasses: updatedTeacher.assignedClasses
+        }));
+      }
+    }
+  }, [teachers]);
 
   const [activeClassId, setActiveClassId] = useState('10-A');
 
