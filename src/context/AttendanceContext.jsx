@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { INITIAL_CLASSES, INITIAL_STUDENTS, MOCK_USERS } from '../data/mockData';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { getTodayLocalDateStr, getTomorrowLocalDateStr } from '../utils/dateUtils';
 
 export function getDefaultSchools() {
   return [
@@ -1015,7 +1016,7 @@ export function AttendanceProvider({ children }) {
 
   // Submit attendance from teacher (also creates a Report record in Database)
   const submitTeacherAttendance = async (classId, markedRecords) => {
-    const dateStr = new Date().toISOString().split('T')[0];
+    const dateStr = getTodayLocalDateStr();
     const submissionId = `${classId}_${dateStr}`;
     const reportId = `report_${classId}_${dateStr}`;
     
@@ -1131,7 +1132,7 @@ export function AttendanceProvider({ children }) {
       timestamp: approvedTime
     });
 
-    const dateStr = new Date().toISOString().split('T')[0];
+    const dateStr = getTodayLocalDateStr();
     const reportId = `report_${submission.classId}_${dateStr}`;
 
     if (isSupabaseConfigured && supabase) {
@@ -1179,7 +1180,7 @@ export function AttendanceProvider({ children }) {
     };
     setSubmissions(updatedSubmissions);
 
-    const dateStr = new Date().toISOString().split('T')[0];
+    const dateStr = getTodayLocalDateStr();
     const reportId = `report_${submission.classId}_${dateStr}`;
 
     if (isSupabaseConfigured && supabase) {
@@ -1207,10 +1208,10 @@ export function AttendanceProvider({ children }) {
         studentRoll: 2,
         studentName: 'Kabir Das',
         classId: '10-A_morning',
-        leaveDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+        leaveDate: getTomorrowLocalDateStr(),
         reason: 'Medical Leave & Hospital Appointment',
         status: 'PENDING_APPROVAL',
-        submittedAt: new Date().toISOString().split('T')[0]
+        submittedAt: getTodayLocalDateStr()
       }
     ];
   });
@@ -1226,10 +1227,10 @@ export function AttendanceProvider({ children }) {
       studentRoll: rollNo,
       studentName: studentName || 'Student',
       classId: classId || '10-A_morning',
-      leaveDate: leaveDate || new Date().toISOString().split('T')[0],
+      leaveDate: leaveDate || getTodayLocalDateStr(),
       reason: reason || 'Pre-Planned Leave',
       status: 'PENDING_APPROVAL',
-      submittedAt: new Date().toISOString().split('T')[0]
+      submittedAt: getTodayLocalDateStr()
     };
 
     setLeaveApplications(prev => [newApp, ...prev]);

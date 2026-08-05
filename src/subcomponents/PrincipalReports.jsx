@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAttendance } from '../context/AttendanceContext';
+import { getTodayLocalDateStr } from '../utils/dateUtils';
 import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { Shield, BarChart3, PieChart as PieIcon, AlertTriangle, Search, Filter, Layers, TrendingUp, CalendarRange, School, UserCheck, CheckCircle2 } from 'lucide-react';
 import StudentReportModal from './StudentReportModal';
@@ -17,7 +18,7 @@ export default function PrincipalReports() {
   // Selected Student Modal State
   const [selectedStudentModal, setSelectedStudentModal] = useState(null);
 
-  const dateStr = new Date().toISOString().split('T')[0];
+  const dateStr = getTodayLocalDateStr();
 
   // Collect all students across all classes with dynamic submission stats
   const studentDedupeMap = {};

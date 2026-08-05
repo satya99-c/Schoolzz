@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAttendance } from '../context/AttendanceContext';
+import { getTodayLocalDateStr } from '../utils/dateUtils';
 import StudentReportModal from './StudentReportModal';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
 import { BarChart3, TrendingUp, AlertTriangle, CheckCircle2, User, Search, Filter, CalendarRange, ChevronRight, FileText } from 'lucide-react';
@@ -22,7 +23,7 @@ export default function TeacherReports() {
   const rawClassStudents = students[selectedClassId] || [];
 
   // Check if today's attendance was submitted for this class
-  const dateStr = new Date().toISOString().split('T')[0];
+  const dateStr = getTodayLocalDateStr();
   const todaySubmissionKey = `${selectedClassId}_${dateStr}`;
   const todaySubmission = submissions[todaySubmissionKey];
 

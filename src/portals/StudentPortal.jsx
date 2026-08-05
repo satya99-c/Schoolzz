@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { useAttendance } from '../context/AttendanceContext';
+import { getTodayLocalDateStr, getTomorrowLocalDateStr } from '../utils/dateUtils';
 import StudentReportModal from '../subcomponents/StudentReportModal';
 import { GraduationCap, CalendarCheck, Clock, ShieldAlert, CheckCircle2, XCircle, FileText, Calendar, Award, BookOpen } from 'lucide-react';
 
 export default function StudentPortal() {
   const { currentUser, students, leaveApplications = [], submitLeaveApplication, studentMarks } = useAttendance();
 
-  const studentClassId = '10-A_morning';
+  const studentClassId = currentUser?.classId || '10-A_morning';
   const classStudents = students[studentClassId] || [];
-  const currentStudent = classStudents[0] || {
+  const currentStudent = classStudents.find(st => st.rollNo === (currentUser?.rollNo || 1)) || classStudents[0] || {
     rollNo: 1,
-    name: 'Isha Kapoor',
+    name: currentUser?.name || 'Isha Kapoor',
     gender: 'Female',
     photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     parentPhone: '+91 97222 22201',
@@ -21,11 +22,7 @@ export default function StudentPortal() {
     prePlannedLeave: false
   };
 
-  const [leaveDate, setLeaveDate] = useState(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
-  });
+  const [leaveDate, setLeaveDate] = useState(() => getTomorrowLocalDateStr());
   const [leaveReason, setLeaveReason] = useState('');
   const [showReportCard, setShowReportCard] = useState(false);
 
@@ -268,7 +265,7 @@ export default function StudentPortal() {
               <input
                 type="date"
                 required
-                min={new Date().toISOString().split('T')[0]}
+                min={getTodayLocalDateStr()}
                 value={leaveDate}
                 onChange={(e) => setLeaveDate(e.target.value)}
                 className="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#1b4d3e] font-mono"

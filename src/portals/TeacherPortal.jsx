@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAttendance } from '../context/AttendanceContext';
+import { getTodayLocalDateStr } from '../utils/dateUtils';
 import AttendanceDeck from '../subcomponents/AttendanceDeck';
 import AttendanceSummary from '../subcomponents/AttendanceSummary';
 import TeacherReports from '../subcomponents/TeacherReports';
@@ -34,7 +35,7 @@ export default function TeacherPortal() {
   const activeClassObj = classes.find(c => c.id === activeClassId) || assignedClasses[0] || classes[0];
   const activeStudentList = students[activeClassId] || [];
 
-  const dateStr = new Date().toISOString().split('T')[0];
+  const dateStr = getTodayLocalDateStr();
 
   const handleStartAttendance = (classId) => {
     setPendingStartClassId(classId);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAttendance } from '../context/AttendanceContext';
+import { getTodayLocalDateStr } from '../utils/dateUtils';
 import PrincipalReports from '../subcomponents/PrincipalReports';
 import OnboardTeacherModal from '../components/OnboardTeacherModal';
 import CreateClassModal from '../components/CreateClassModal';
@@ -471,7 +472,7 @@ export default function PrincipalPortal() {
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {classes.map(cls => {
-            const dateStr = new Date().toISOString().split('T')[0];
+            const dateStr = getTodayLocalDateStr();
             const sub = submissions[`${cls.id}_${dateStr}`];
 
             return (
