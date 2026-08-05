@@ -1087,6 +1087,32 @@ export function AttendanceProvider({ children }) {
     showToast(`Attendance & Daily Report for Class ${classId} saved to database!`, 'success');
   };
 
+  const resetClassAttendanceForToday = (classId) => {
+    const dateStr = getTodayLocalDateStr();
+    const submissionId = `${classId}_${dateStr}`;
+    const reportId = `report_${classId}_${dateStr}`;
+
+    setSubmissions(prev => {
+      const copy = { ...prev };
+      delete copy[submissionId];
+      delete copy[classId];
+      try {
+        localStorage.setItem('schoolzz_submissions', JSON.stringify(copy));
+      } catch (e) {}
+      return copy;
+    });
+
+    setDbReports(prev => {
+      const filtered = prev.filter(r => r.id !== reportId && (r.class_id !== classId || r.report_date !== dateStr));
+      try {
+        localStorage.setItem('schoolzz_reports', JSON.stringify(filtered));
+      } catch (e) {}
+      return filtered;
+    });
+
+    showToast(`Today's attendance for Class ${classId} reset. You can now start fresh!`, 'info');
+  };
+
   // Principal Approves Attendance (Updates Report status to APPROVED in Database)
   const approveAttendance = async (submissionId) => {
     const submission = submissions[submissionId];
@@ -1345,6 +1371,7 @@ export function AttendanceProvider({ children }) {
         onboardTeacher,
         createClassAndStudents,
         submitTeacherAttendance,
+        resetClassAttendanceForToday,
         approveAttendance,
         declineAttendance,
         leaveApplications,

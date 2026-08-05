@@ -5,10 +5,10 @@ import AttendanceDeck from '../subcomponents/AttendanceDeck';
 import AttendanceSummary from '../subcomponents/AttendanceSummary';
 import TeacherReports from '../subcomponents/TeacherReports';
 import AddMarksModal from '../subcomponents/AddMarksModal';
-import { School, Play, CheckCircle2, Clock, Users, UserCheck, ChevronRight, BarChart3, Sun, Moon, Award, BookOpen, FileCheck, ArrowLeft, PlusCircle, FileText } from 'lucide-react';
+import { School, Play, CheckCircle2, Clock, Users, UserCheck, ChevronRight, BarChart3, Sun, Moon, Award, BookOpen, FileCheck, ArrowLeft, PlusCircle, FileText, RotateCcw } from 'lucide-react';
 
 export default function TeacherPortal() {
-  const { classes, students, activeClassId, setActiveClassId, submitTeacherAttendance, submissions, currentUser, studentMarks, examRosters = [], createExamRoster } = useAttendance();
+  const { classes, students, activeClassId, setActiveClassId, submitTeacherAttendance, resetClassAttendanceForToday, submissions, currentUser, studentMarks, examRosters = [], createExamRoster } = useAttendance();
 
   // Top Section Navigation: 'attendance' | 'reports' | 'marks'
   const [activeTab, setActiveTab] = useState('attendance');
@@ -198,13 +198,28 @@ export default function TeacherPortal() {
                           )}
                         </div>
 
-                        <button
-                          onClick={() => handleStartAttendance(cls.id)}
-                          className="px-5 py-2.5 rounded-2xl bg-[#1b4d3e] hover:bg-[#143c30] text-white text-xs font-bold shadow-md transition-all flex items-center space-x-2 cursor-pointer"
-                        >
-                          <span>{isSubmitted ? 'Review / Retake' : 'Start Attendance'}</span>
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          {isSubmitted && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                resetClassAttendanceForToday(cls.id);
+                              }}
+                              title="Reset today's attendance to start fresh"
+                              className="px-3 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200 shadow-xs transition-all flex items-center space-x-1.5 cursor-pointer"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              <span>Reset Today</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleStartAttendance(cls.id)}
+                            className="px-5 py-2.5 rounded-2xl bg-[#1b4d3e] hover:bg-[#143c30] text-white text-xs font-bold shadow-md transition-all flex items-center space-x-2 cursor-pointer"
+                          >
+                            <span>{isSubmitted ? 'Review / Retake' : 'Start Attendance'}</span>
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
                     </div>
