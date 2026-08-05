@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { INITIAL_CLASSES, INITIAL_STUDENTS, MOCK_USERS } from '../data/mockData';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { getTodayLocalDateStr, getTomorrowLocalDateStr } from '../utils/dateUtils';
-import { getOrgTableNames } from '../utils/tableNameUtils';
+import { getOrgTableNames, ensureOrgTablesExist } from '../utils/tableNameUtils';
 
 export function getDefaultSchools() {
   return [
@@ -132,6 +132,10 @@ export function AttendanceProvider({ children }) {
     if (isSupabaseConfigured && supabase) {
       (async () => {
         try {
+          // 1. Ensure dynamic PostgreSQL tables are created in Supabase
+          await ensureOrgTablesExist(newSch.name);
+
+          // 2. Insert into OrganizationName table
           await supabase.from(tableNames.orgTable).upsert({
             code: newSch.code,
             name: newSch.name,
@@ -144,6 +148,7 @@ export function AttendanceProvider({ children }) {
             city: newSch.city
           });
 
+          // 3. Insert into OrganizationName_Principal table
           await supabase.from(tableNames.principalTable).upsert({
             id: newPrincipal.id,
             name: newPrincipal.name,
@@ -806,6 +811,8 @@ export function AttendanceProvider({ children }) {
     const tableNames = getOrgTableNames(activeSchool?.name || 'Sunshine International School');
     if (isSupabaseConfigured && supabase) {
       try {
+        await ensureOrgTablesExist(activeSchool?.name || 'Sunshine International School');
+
         const teacherRow = {
           id: newTeacher.id,
           username: newTeacher.username,
@@ -881,6 +888,8 @@ export function AttendanceProvider({ children }) {
 
     if (isSupabaseConfigured && supabase) {
       try {
+        await ensureOrgTablesExist(activeSchool?.name || 'Sunshine International School');
+
         await supabase.from('classes').upsert({
           id: classId,
           name: classData.name,

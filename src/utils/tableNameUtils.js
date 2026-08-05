@@ -1,3 +1,5 @@
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+
 // Sanitizes Organization Name (e.g. "Hyderabad High School" -> "HyderabadHighSchool")
 export function sanitizeOrgName(name) {
   if (!name) return 'SchoolzzOrg';
@@ -16,4 +18,15 @@ export function getOrgTableNames(orgName) {
     teachersTable: `${base}_Teachers`,
     studentsTable: `${base}_Students`
   };
+}
+
+// Ensures database tables exist in Supabase via RPC call
+export async function ensureOrgTablesExist(orgName) {
+  if (!isSupabaseConfigured || !supabase) return;
+  const tableNames = getOrgTableNames(orgName);
+  try {
+    await supabase.rpc('create_organization_tables', { org_name: tableNames.orgTable });
+  } catch (e) {
+    console.warn('Supabase RPC create_organization_tables notice:', e);
+  }
 }
