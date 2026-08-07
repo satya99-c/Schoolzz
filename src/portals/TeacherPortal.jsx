@@ -5,7 +5,6 @@ import AttendanceDeck from '../subcomponents/AttendanceDeck';
 import AttendanceSummary from '../subcomponents/AttendanceSummary';
 import TeacherReports from '../subcomponents/TeacherReports';
 import AddMarksModal from '../subcomponents/AddMarksModal';
-import ClassFeeRosterModal from '../subcomponents/ClassFeeRosterModal';
 import { School, Play, CheckCircle2, Clock, Users, UserCheck, ChevronRight, BarChart3, Sun, Moon, Award, BookOpen, FileCheck, ArrowLeft, PlusCircle, FileText, Calendar, CreditCard, Send, Download, Search } from 'lucide-react';
 
 export default function TeacherPortal() {
@@ -21,6 +20,8 @@ export default function TeacherPortal() {
   // Marks & Fee Entry state
   const [selectedMarksClassId, setSelectedMarksClassId] = useState(null);
   const [selectedFeeClassId, setSelectedFeeClassId] = useState(null);
+  const [feeSearchQuery, setFeeSearchQuery] = useState('');
+  const [feeStatusFilter, setFeeStatusFilter] = useState('all');
   const [selectedStudentForMarks, setSelectedStudentForMarks] = useState(null);
   const [selectedExamName, setSelectedExamName] = useState('Mid-Term Examination 2026');
   const [showCreateRosterModal, setShowCreateRosterModal] = useState(false);
@@ -437,8 +438,8 @@ export default function TeacherPortal() {
         return (
           <div className="space-y-6 animate-fade-in">
             
-            {/* VIEW 1: CLASS SELECTION CARDS FOR MARKS ENTRY */}
-            {!selectedMarksClassId && (
+            {/* VIEW 1: CLASS SELECTION CARDS FOR MARKS ENTRY & FEE OVERVIEW */}
+            {!selectedMarksClassId && !selectedFeeClassId && (
               <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md space-y-4">
                 <div>
                   <h2 className="text-base font-bold text-slate-900 flex items-center space-x-2">
@@ -735,6 +736,217 @@ export default function TeacherPortal() {
             </div>
           )}
 
+          {/* VIEW 3: CLASS ROSTER PAGE FOR FEE & PAYMENT DETAILS */}
+          {selectedFeeClassId && (() => {
+            const feeClassObj = classes.find(c => c.id === selectedFeeClassId) || { name: 'Class Section' };
+            const classStudentList = students[selectedFeeClassId] || [];
+            const feeRecords = studentFees[selectedFeeClassId] || [];
+
+            const combinedFeeList = classStudentList.map(st => {
+              const feeObj = feeRecords.find(f => f.rollNo === st.rollNo) || {
+                rollNo: st.rollNo,
+                totalFee: 45000,
+                tuitionFee: 30000,
+                examFee: 5000,
+                labFee: 6000,
+                libraryFee: 4000,
+                paidAmount: 30000,
+                dueAmount: 15000,
+                status: 'DUE',
+                dueDate: '15 Aug 2026'
+              };
+              return { ...st, ...feeObj };
+            });
+
+            const filteredFeeList = combinedFeeList.filter(st => {
+              if (feeStatusFilter !== 'all' && st.status !== feeStatusFilter) return false;
+              if (feeSearchQuery.trim()) {
+                const q = feeSearchQuery.toLowerCase();
+                return st.name.toLowerCase().includes(q) || String(st.rollNo).includes(q);
+              }
+              return true;
+            });
+
+            const totalReceivables = combinedFeeList.reduce((sum, f) => sum + (f.totalFee || 45000), 0);
+            const totalCollected = combinedFeeList.reduce((sum, f) => sum + (f.paidAmount || 0), 0);
+            const totalDue = combinedFeeList.reduce((sum, f) => sum + (f.dueAmount || 0), 0);
+            const paidCount = combinedFeeList.filter(f => f.status === 'PAID').length;
+
+            return (
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md space-y-6 animate-fade-in">
+                
+                {/* Header with Back Button */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => setSelectedFeeClassId(null)}
+                      className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer"
+                    >
+                      <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900 flex items-center space-x-2">
+                        <CreditCard className="w-5 h-5 text-[#1b4d3e]" />
+                        <span>Class Student Fee & Payment Roster — {feeClassObj.name}</span>
+                      </h2>
+                      <p className="text-xs text-slate-500">
+                        View financial status, collected fees, outstanding dues, and parent reminders.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setSelectedFeeClassId(null)}
+                    className="text-xs text-[#1b4d3e] font-bold hover:underline cursor-pointer flex items-center space-x-1"
+                  >
+                    <span>← Back to Class Cards</span>
+                  </button>
+                </div>
+
+                {/* Summary Metrics Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Class Receivables</span>
+                    <div className="text-2xl font-black text-slate-900 mt-1">₹{totalReceivables.toLocaleString('en-IN')}</div>
+                    <div className="text-[11px] text-slate-500 font-medium">{classStudentList.length} Students Enrolled</div>
+                  </div>
+
+                  <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl">
+                    <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Total Collected Amount</span>
+                    <div className="text-2xl font-black text-emerald-800 mt-1">₹{totalCollected.toLocaleString('en-IN')}</div>
+                    <div className="text-[11px] text-emerald-700 font-medium">✓ {paidCount} / {classStudentList.length} Fully Paid</div>
+                  </div>
+
+                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl">
+                    <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider block">Total Outstanding Balance</span>
+                    <div className="text-2xl font-black text-amber-900 mt-1">₹{totalDue.toLocaleString('en-IN')}</div>
+                    <div className="text-[11px] text-amber-800 font-medium">⚠️ {classStudentList.length - paidCount} Student(s) Fee Due</div>
+                  </div>
+                </div>
+
+                {/* Search & Filter Toolbar */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <div className="relative w-full sm:w-72">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    <input
+                      type="text"
+                      placeholder="Search student or roll #..."
+                      value={feeSearchQuery}
+                      onChange={(e) => setFeeSearchQuery(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1b4d3e]"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2 w-full sm:w-auto">
+                    <select
+                      value={feeStatusFilter}
+                      onChange={(e) => setFeeStatusFilter(e.target.value)}
+                      className="bg-white border border-slate-200 text-xs font-bold text-slate-800 rounded-xl px-3 py-2 focus:outline-none cursor-pointer"
+                    >
+                      <option value="all">All Fee Status</option>
+                      <option value="PAID">Fully Paid</option>
+                      <option value="DUE">Outstanding Due</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Student Fee Roster Table */}
+                <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                  <table className="w-full text-left text-xs text-slate-700">
+                    <thead className="bg-slate-100 text-slate-600 uppercase font-semibold text-[10px]">
+                      <tr>
+                        <th className="p-3.5">Roll #</th>
+                        <th className="p-3.5">Student Name</th>
+                        <th className="p-3.5">Total Fee</th>
+                        <th className="p-3.5">Paid Amount</th>
+                        <th className="p-3.5">Due Balance</th>
+                        <th className="p-3.5">Payment Status</th>
+                        <th className="p-3.5">Payment Date / Ref</th>
+                        <th className="p-3.5 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 font-medium bg-white">
+                      {filteredFeeList.length > 0 ? (
+                        filteredFeeList.map(st => (
+                          <tr key={st.rollNo} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-3.5 font-mono font-bold text-slate-900">#{st.rollNo}</td>
+                            <td className="p-3.5 font-bold text-slate-900">
+                              <div className="flex items-center space-x-2.5">
+                                <img src={st.photo} alt={st.name} className="w-8 h-8 rounded-full object-cover border border-slate-200" />
+                                <div>
+                                  <span className="font-extrabold block text-slate-900">{st.name}</span>
+                                  <span className="text-[10px] text-slate-400 font-normal">{st.parentPhone}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-3.5 font-mono font-bold text-slate-900">₹{st.totalFee.toLocaleString('en-IN')}</td>
+                            <td className="p-3.5 font-mono font-bold text-emerald-700">₹{st.paidAmount.toLocaleString('en-IN')}</td>
+                            <td className="p-3.5 font-mono font-bold text-amber-800">
+                              {st.dueAmount > 0 ? `₹${st.dueAmount.toLocaleString('en-IN')}` : '₹0'}
+                            </td>
+                            <td className="p-3.5">
+                              {st.status === 'PAID' ? (
+                                <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-black px-2.5 py-1 rounded-full flex items-center space-x-1 w-fit">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                                  <span>PAID</span>
+                                </span>
+                              ) : (
+                                <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2.5 py-1 rounded-full flex items-center space-x-1 w-fit">
+                                  <Clock className="w-3 h-3 text-amber-700" />
+                                  <span>DUE</span>
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3.5 text-xs text-slate-600 font-mono">
+                              {st.status === 'PAID' ? (
+                                <div>
+                                  <span className="font-bold text-slate-900 block">{st.paidDate}</span>
+                                  <span className="text-[10px] text-[#1b4d3e] font-semibold">{st.transactionId}</span>
+                                </div>
+                              ) : (
+                                <span className="text-amber-800 font-medium">Due by {st.dueDate}</span>
+                              )}
+                            </td>
+                            <td className="p-3.5 text-right">
+                              {st.status === 'DUE' ? (
+                                <button
+                                  onClick={() => {
+                                    showToast(`Fee Payment Reminder & WhatsApp Alert sent to ${st.name}'s parent (${st.parentPhone})!`, 'success');
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-[11px] border border-amber-300 transition-all cursor-pointer inline-flex items-center space-x-1 shadow-2xs"
+                                >
+                                  <Send className="w-3 h-3 text-amber-700" />
+                                  <span>Remind Parent</span>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    showToast(`Digital Fee Receipt for ${st.name} sent to parent (${st.parentPhone})!`, 'success');
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#1b4d3e] font-bold text-[11px] border border-emerald-300 transition-all cursor-pointer inline-flex items-center space-x-1 shadow-2xs"
+                                >
+                                  <Download className="w-3 h-3 text-emerald-700" />
+                                  <span>Send Receipt</span>
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={8} className="p-8 text-center text-slate-400 italic">
+                            No student records found matching search filter.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            );
+          })()}
+
           {/* ADD / EDIT MARKS MODAL */}
           {selectedStudentForMarks && (
             <AddMarksModal
@@ -817,18 +1029,6 @@ export default function TeacherPortal() {
 
               </div>
             </div>
-          )}
-
-          {/* CLASS STUDENT FEE ROSTER MODAL */}
-          {selectedFeeClassId && (
-            <ClassFeeRosterModal
-              classId={selectedFeeClassId}
-              className={classes.find(c => c.id === selectedFeeClassId)?.name || 'Class Section'}
-              studentList={students[selectedFeeClassId] || []}
-              feeRecords={studentFees[selectedFeeClassId] || []}
-              showToast={showToast}
-              onClose={() => setSelectedFeeClassId(null)}
-            />
           )}
 
         </div>
