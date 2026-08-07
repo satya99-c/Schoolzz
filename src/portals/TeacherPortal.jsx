@@ -578,7 +578,7 @@ export default function TeacherPortal() {
                       <th className="p-3">Student Name</th>
                       <th className="p-3">Exam Name</th>
                       <th className="p-3">Total Score</th>
-                      <th className="p-3">Percentage %</th>
+                      <th className="p-3">Fee Status</th>
                       <th className="p-3">Grade & Status</th>
                       <th className="p-3 text-right">Action</th>
                     </tr>
@@ -587,6 +587,7 @@ export default function TeacherPortal() {
                     {(students[selectedMarksClassId] || []).map(st => {
                       const classRecords = studentMarks[selectedMarksClassId] || [];
                       const record = classRecords.find(r => r.rollNo === st.rollNo && r.examName === selectedExamName);
+                      const stFee = (studentFees[selectedMarksClassId] || []).find(f => f.rollNo === st.rollNo) || { status: 'PAID', dueAmount: 0 };
 
                       return (
                         <tr key={st.rollNo} className="hover:bg-slate-50 transition-colors">
@@ -597,6 +598,27 @@ export default function TeacherPortal() {
                               <img src={st.photo} alt={st.name} className="w-8 h-8 rounded-full object-cover border border-slate-200" />
                               <span className="font-bold text-slate-900">{st.name}</span>
                             </div>
+                          </td>
+
+                          <td className="p-3 text-xs text-slate-600 font-medium">{selectedExamName}</td>
+
+                          <td className="p-3 font-mono font-bold text-slate-900">
+                            {record ? `${record.totalMarks} / ${record.maxMarks}` : '—'}
+                          </td>
+
+                          {/* Fee Status Badge for Teacher View */}
+                          <td className="p-3">
+                            {stFee.status === 'PAID' ? (
+                              <span className="inline-flex items-center space-x-1 text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 px-2.5 py-0.5 rounded-full">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                                <span>PAID</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center space-x-1 text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded-full">
+                                <Clock className="w-3 h-3 text-amber-700" />
+                                <span>DUE: ₹{(stFee.dueAmount || 15000).toLocaleString('en-IN')}</span>
+                              </span>
+                            )}
                           </td>
 
                           <td className="p-3 font-medium text-slate-600">

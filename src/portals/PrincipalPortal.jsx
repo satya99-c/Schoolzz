@@ -7,12 +7,17 @@ import CreateClassModal from '../components/CreateClassModal';
 import StudentReportModal from '../subcomponents/StudentReportModal';
 import AssignTeacherModal from '../subcomponents/AssignTeacherModal';
 import AcademicScorecardManager from '../subcomponents/AcademicScorecardManager';
-import { Shield, Bell, CheckCircle2, XCircle, MessageSquare, BarChart3, Sun, Moon, AlertTriangle, UserPlus, PlusCircle, Users, School, Award, ArrowLeft, ChevronRight, FileText, Copy, GraduationCap, UserCheck } from 'lucide-react';
+import { Shield, Bell, CheckCircle2, XCircle, MessageSquare, BarChart3, Sun, Moon, AlertTriangle, UserPlus, PlusCircle, Users, School, Award, ArrowLeft, ChevronRight, FileText, Copy, GraduationCap, UserCheck, CreditCard, Clock, Search, Send, Download } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function PrincipalPortal() {
-  const { classes, teachers, students, submissions, approveAttendance, declineAttendance, whatsappLogs, setActiveWhatsAppPreview, leaveApplications = [], approveLeaveApplication, declineLeaveApplication, attendanceReminders = [], triggerManualReminder, studentMarks, showToast, activeSchool } = useAttendance();
-  const [activeTab, setActiveTab] = useState('approvals'); // 'approvals' | 'overview' | 'manage' | 'whatsapp' | 'scorecards'
+  const { classes, teachers, students, submissions, approveAttendance, declineAttendance, whatsappLogs, setActiveWhatsAppPreview, leaveApplications = [], approveLeaveApplication, declineLeaveApplication, attendanceReminders = [], triggerManualReminder, studentMarks, studentFees = {}, showToast, activeSchool } = useAttendance();
+  const [activeTab, setActiveTab] = useState('approvals'); // 'approvals' | 'overview' | 'manage' | 'whatsapp' | 'scorecards' | 'fees'
+
+  // Fee Overview State
+  const [feeClassFilter, setFeeClassFilter] = useState('all');
+  const [feeStatusFilter, setFeeStatusFilter] = useState('all');
+  const [feeSearchQuery, setFeeSearchQuery] = useState('');
 
   // Teacher Assignment Modal State
   const [assigningTeacher, setAssigningTeacher] = useState(null);
@@ -206,6 +211,18 @@ export default function PrincipalPortal() {
         >
           <Award className="w-4 h-4" />
           <span>Academic Scorecards & Marks</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('fees')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 whitespace-nowrap cursor-pointer ${
+            activeTab === 'fees'
+              ? 'bg-[#1b4d3e] text-white shadow-md'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <CreditCard className="w-4 h-4 text-emerald-300" />
+          <span>School Fee & Revenue Collections</span>
         </button>
 
         <button
@@ -663,6 +680,225 @@ export default function PrincipalPortal() {
           </div>
         </div>
       )}
+
+      {/* TAB: SCHOOL FEE & REVENUE COLLECTIONS OVERVIEW */}
+      {activeTab === 'fees' && (() => {
+        // Flatten student fee records
+        const allFeeRecords = Object.entries(studentFees).flatMap(([cId, feeList]) => {
+          const clsObj = classes.find(c => c.id === cId) || { name: cId };
+          const classStudentList = students[cId] || [];
+          return feeList.map(fee => {
+            const stObj = classStudentList.find(s => s.rollNo === fee.rollNo) || { name: `Student #${fee.rollNo}`, parentPhone: '+91 98765 00000', photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150' };
+            return {
+              ...fee,
+              classId: cId,
+              className: clsObj.name,
+              studentName: stObj.name,
+              parentPhone: stObj.parentPhone,
+              photo: stObj.photo
+            };
+          });
+        });
+
+        // Filtered records
+        const filteredFees = allFeeRecords.filter(f => {
+          if (feeClassFilter !== 'all' && f.classId !== feeClassFilter) return false;
+          if (feeStatusFilter !== 'all' && f.status !== feeStatusFilter) return false;
+          if (feeSearchQuery.trim()) {
+            const q = feeSearchQuery.toLowerCase();
+            return f.studentName.toLowerCase().includes(q) || String(f.rollNo).includes(q) || f.className.toLowerCase().includes(q);
+          }
+          return true;
+        });
+
+        const totalReceivables = allFeeRecords.reduce((sum, f) => sum + (f.totalFee || 45000), 0);
+        const totalCollected = allFeeRecords.reduce((sum, f) => sum + (f.paidAmount || 0), 0);
+        const totalOutstanding = allFeeRecords.reduce((sum, f) => sum + (f.dueAmount || 0), 0);
+        const collectionRate = totalReceivables > 0 ? Math.round((totalCollected / totalReceivables) * 100) : 100;
+
+        return (
+          <div className="space-y-6 animate-fade-in">
+            
+            {/* Header & Metrics */}
+            <div className="bg-[#1b4d3e] text-white p-6 md:p-8 rounded-3xl shadow-xl space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-700/60 pb-5">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-800 text-emerald-200 flex items-center justify-center border border-emerald-600 shadow-md">
+                    <CreditCard className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="inline-flex items-center space-x-1.5 bg-emerald-800 text-emerald-200 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full mb-1">
+                      <span>💰 Executive Revenue & Collection Dashboard</span>
+                    </div>
+                    <h2 className="text-xl font-black text-white">School Fee & Revenue Collections</h2>
+                  </div>
+                </div>
+
+                <div className="bg-emerald-800/80 border border-emerald-600 px-4 py-2 rounded-2xl text-right">
+                  <span className="text-[10px] font-bold text-emerald-200 uppercase block">Collection Rate</span>
+                  <span className="text-xl font-black text-white font-mono">{collectionRate}%</span>
+                </div>
+              </div>
+
+              {/* KPI Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-[#143c30] border border-emerald-700/60 p-4 rounded-2xl">
+                  <span className="text-[10px] font-bold uppercase text-emerald-300">Total Annual Receivables</span>
+                  <div className="text-2xl font-black text-white mt-1">₹{totalReceivables.toLocaleString('en-IN')}</div>
+                  <div className="text-[11px] text-emerald-200/80 mt-0.5">Academic Year 2026-27</div>
+                </div>
+
+                <div className="bg-emerald-900/60 border border-emerald-500/50 p-4 rounded-2xl">
+                  <span className="text-[10px] font-bold uppercase text-emerald-300">Total Collected Fee</span>
+                  <div className="text-2xl font-black text-emerald-300 mt-1">₹{totalCollected.toLocaleString('en-IN')}</div>
+                  <div className="text-[11px] text-emerald-200/80 mt-0.5">✓ Verified & Deposited</div>
+                </div>
+
+                <div className="bg-amber-950/60 border border-amber-500/40 p-4 rounded-2xl">
+                  <span className="text-[10px] font-bold uppercase text-amber-300">Total Outstanding Due</span>
+                  <div className="text-2xl font-black text-amber-400 mt-1">₹{totalOutstanding.toLocaleString('en-IN')}</div>
+                  <div className="text-[11px] text-amber-200/80 mt-0.5">⚠️ Pending Collection</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter & Search Toolbar */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+              
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  placeholder="Search student or roll #..."
+                  value={feeSearchQuery}
+                  onChange={(e) => setFeeSearchQuery(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1b4d3e]"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 w-full sm:w-auto">
+                <select
+                  value={feeClassFilter}
+                  onChange={(e) => setFeeClassFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 rounded-xl px-3 py-2 focus:outline-none cursor-pointer"
+                >
+                  <option value="all">All Class Sections</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.name} ({c.shift})</option>
+                  ))}
+                </select>
+
+                <select
+                  value={feeStatusFilter}
+                  onChange={(e) => setFeeStatusFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 rounded-xl px-3 py-2 focus:outline-none cursor-pointer"
+                >
+                  <option value="all">All Fee Status</option>
+                  <option value="PAID">Fully Paid</option>
+                  <option value="DUE">Outstanding Due</option>
+                </select>
+              </div>
+
+            </div>
+
+            {/* Master Student Fee Table */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-md overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-100 text-slate-600 uppercase font-semibold text-[10px]">
+                  <tr>
+                    <th className="p-3.5">Roll #</th>
+                    <th className="p-3.5">Student Name</th>
+                    <th className="p-3.5">Class Section</th>
+                    <th className="p-3.5">Total Fee</th>
+                    <th className="p-3.5">Paid Amount</th>
+                    <th className="p-3.5">Due Balance</th>
+                    <th className="p-3.5">Fee Status</th>
+                    <th className="p-3.5">Payment Date / Ref</th>
+                    <th className="p-3.5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 font-medium bg-white">
+                  {filteredFees.length > 0 ? (
+                    filteredFees.map(item => (
+                      <tr key={`${item.classId}_${item.rollNo}`} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-3.5 font-mono font-bold text-slate-900">#{item.rollNo}</td>
+                        <td className="p-3.5 font-bold text-slate-900">
+                          <div className="flex items-center space-x-2.5">
+                            <img src={item.photo} alt={item.studentName} className="w-8 h-8 rounded-full object-cover border border-slate-200" />
+                            <div>
+                              <span className="font-extrabold block text-slate-900">{item.studentName}</span>
+                              <span className="text-[10px] text-slate-400">{item.parentPhone}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3.5 text-slate-600 font-medium">{item.className}</td>
+                        <td className="p-3.5 font-mono font-bold text-slate-900">₹{item.totalFee.toLocaleString('en-IN')}</td>
+                        <td className="p-3.5 font-mono font-bold text-emerald-700">₹{item.paidAmount.toLocaleString('en-IN')}</td>
+                        <td className="p-3.5 font-mono font-bold text-amber-800">
+                          {item.dueAmount > 0 ? `₹${item.dueAmount.toLocaleString('en-IN')}` : '₹0'}
+                        </td>
+                        <td className="p-3.5">
+                          {item.status === 'PAID' ? (
+                            <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-black px-2.5 py-1 rounded-full flex items-center space-x-1 w-fit">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                              <span>PAID</span>
+                            </span>
+                          ) : (
+                            <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2.5 py-1 rounded-full flex items-center space-x-1 w-fit">
+                              <Clock className="w-3 h-3 text-amber-700" />
+                              <span>DUE</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3.5 text-xs text-slate-600 font-mono">
+                          {item.status === 'PAID' ? (
+                            <div>
+                              <span className="font-bold text-slate-900 block">{item.paidDate}</span>
+                              <span className="text-[10px] text-[#1b4d3e] font-semibold">{item.transactionId}</span>
+                            </div>
+                          ) : (
+                            <span className="text-amber-800 font-medium">Due by {item.dueDate}</span>
+                          )}
+                        </td>
+                        <td className="p-3.5 text-right">
+                          {item.status === 'DUE' ? (
+                            <button
+                              onClick={() => {
+                                showToast(`Fee Payment Reminder & WhatsApp Alert sent to ${item.studentName}'s parent (${item.parentPhone})!`, 'success');
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-[11px] border border-amber-300 transition-all cursor-pointer inline-flex items-center space-x-1 shadow-2xs"
+                            >
+                              <Send className="w-3 h-3 text-amber-700" />
+                              <span>Remind Parent</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                showToast(`Digital Payment Receipt for ${item.studentName} generated & sent!`, 'success');
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#1b4d3e] font-bold text-[11px] border border-emerald-300 transition-all cursor-pointer inline-flex items-center space-x-1 shadow-2xs"
+                            >
+                              <Download className="w-3 h-3 text-emerald-700" />
+                              <span>Receipt Sent</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={9} className="p-8 text-center text-slate-400 italic">
+                        No fee records matching search filter.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        );
+      })()}
 
       {/* ONBOARD TEACHER MODAL */}
       {showOnboardModal && (

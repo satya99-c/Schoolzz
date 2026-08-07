@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useAttendance } from '../context/AttendanceContext';
 import { getTodayLocalDateStr, getTomorrowLocalDateStr } from '../utils/dateUtils';
 import StudentReportModal from '../subcomponents/StudentReportModal';
-import { GraduationCap, CalendarCheck, Clock, ShieldAlert, CheckCircle2, XCircle, FileText, Calendar, Award, BookOpen } from 'lucide-react';
+import StudentFeePaymentModal from '../subcomponents/StudentFeePaymentModal';
+import { GraduationCap, CalendarCheck, Clock, ShieldAlert, CheckCircle2, XCircle, FileText, Calendar, Award, BookOpen, CreditCard, ShieldCheck, Download, ArrowRight } from 'lucide-react';
 
 export default function StudentPortal() {
-  const { currentUser, students, leaveApplications = [], submitLeaveApplication, studentMarks } = useAttendance();
+  const { currentUser, students, leaveApplications = [], submitLeaveApplication, studentMarks, studentFees = {}, payStudentFee } = useAttendance();
 
   const studentClassId = currentUser?.classId || '10-A_morning';
   const classStudents = students[studentClassId] || [];
@@ -25,6 +26,21 @@ export default function StudentPortal() {
   const [leaveDate, setLeaveDate] = useState(() => getTomorrowLocalDateStr());
   const [leaveReason, setLeaveReason] = useState('');
   const [showReportCard, setShowReportCard] = useState(false);
+  const [showPayModal, setShowPayModal] = useState(false);
+
+  // Student Fee Record
+  const myFeeRecord = (studentFees[studentClassId] || []).find(f => f.rollNo === currentStudent.rollNo) || {
+    rollNo: currentStudent.rollNo,
+    totalFee: 45000,
+    tuitionFee: 30000,
+    examFee: 5000,
+    labFee: 6000,
+    libraryFee: 4000,
+    paidAmount: 30000,
+    dueAmount: 15000,
+    status: 'DUE',
+    dueDate: '15 Aug 2026'
+  };
 
   // Filter leave applications for this student
   const studentApps = leaveApplications.filter(app => app.studentRoll === currentStudent.rollNo);
@@ -240,6 +256,126 @@ export default function StudentPortal() {
           </div>
         );
       })()}
+
+      {/* STUDENT FEE PORTAL & PAYMENTS CARD */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-md space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#1b4d3e] flex items-center justify-center border border-emerald-200 shadow-xs">
+              <CreditCard className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="inline-flex items-center space-x-1.5 bg-emerald-100 text-[#1b4d3e] text-[10px] font-extrabold px-2.5 py-0.5 rounded-full mb-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Academic Year 2026-27 Fee Portal</span>
+              </div>
+              <h3 className="text-lg font-black text-slate-900">Student Fee Summary & Online Payments</h3>
+            </div>
+          </div>
+
+          <div>
+            {myFeeRecord.status === 'PAID' ? (
+              <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-black px-4 py-2 rounded-full flex items-center space-x-1.5 shadow-xs">
+                <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                <span>FEE FULLY PAID</span>
+              </span>
+            ) : (
+              <span className="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black px-4 py-2 rounded-full flex items-center space-x-1.5 shadow-xs">
+                <Clock className="w-4 h-4 text-amber-700" />
+                <span>FEE DUE: ₹{myFeeRecord.dueAmount.toLocaleString('en-IN')}</span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Fee Statistics Summary */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
+            <span className="text-[10px] font-bold uppercase text-slate-500">Total Academic Fee</span>
+            <div className="text-xl font-black text-slate-900 mt-1">₹{myFeeRecord.totalFee.toLocaleString('en-IN')}</div>
+            <div className="text-[11px] text-slate-500 font-medium">Annual tuition & facilities</div>
+          </div>
+
+          <div className="bg-emerald-50/60 border border-emerald-200 p-4 rounded-2xl">
+            <span className="text-[10px] font-bold uppercase text-emerald-800">Amount Paid</span>
+            <div className="text-xl font-black text-emerald-800 mt-1">₹{myFeeRecord.paidAmount.toLocaleString('en-IN')}</div>
+            <div className="text-[11px] text-emerald-700 font-medium">
+              {myFeeRecord.status === 'PAID' ? `✓ Paid on ${myFeeRecord.paidDate}` : 'Partially Settled'}
+            </div>
+          </div>
+
+          <div className={`p-4 rounded-2xl border ${myFeeRecord.dueAmount > 0 ? 'bg-amber-50/70 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
+            <span className={`text-[10px] font-bold uppercase ${myFeeRecord.dueAmount > 0 ? 'text-amber-800' : 'text-slate-500'}`}>Outstanding Balance</span>
+            <div className={`text-xl font-black ${myFeeRecord.dueAmount > 0 ? 'text-amber-900' : 'text-slate-900'} mt-1`}>
+              ₹{myFeeRecord.dueAmount.toLocaleString('en-IN')}
+            </div>
+            <div className={`text-[11px] font-medium ${myFeeRecord.dueAmount > 0 ? 'text-amber-800' : 'text-slate-500'}`}>
+              {myFeeRecord.dueAmount > 0 ? `Due Date: ${myFeeRecord.dueDate}` : '✓ Clear Balance'}
+            </div>
+          </div>
+        </div>
+
+        {/* Breakdown & Action */}
+        <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
+          <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Fee Component Breakdown</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-semibold text-slate-600">
+            <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+              <span className="text-[10px] text-slate-400 block">Tuition Fee</span>
+              <span className="text-slate-900 font-mono font-bold">₹{myFeeRecord.tuitionFee.toLocaleString('en-IN')}</span>
+            </div>
+            <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+              <span className="text-[10px] text-slate-400 block">Exam Fee</span>
+              <span className="text-slate-900 font-mono font-bold">₹{myFeeRecord.examFee.toLocaleString('en-IN')}</span>
+            </div>
+            <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+              <span className="text-[10px] text-slate-400 block">Lab & Activity</span>
+              <span className="text-slate-900 font-mono font-bold">₹{myFeeRecord.labFee.toLocaleString('en-IN')}</span>
+            </div>
+            <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+              <span className="text-[10px] text-slate-400 block">Library Fee</span>
+              <span className="text-slate-900 font-mono font-bold">₹{myFeeRecord.libraryFee.toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+          {myFeeRecord.status === 'PAID' ? (
+            <div className="flex items-center space-x-2 text-xs font-bold text-emerald-800 bg-emerald-50 px-4 py-2.5 rounded-2xl border border-emerald-200 w-full sm:w-auto">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Txn Ref: <span className="font-mono">{myFeeRecord.transactionId}</span> • Paid via {myFeeRecord.paymentMethod}</span>
+            </div>
+          ) : (
+            <div className="text-xs text-slate-500 font-medium">
+              ⚠️ Please pay the outstanding due of <strong className="text-slate-900 font-bold">₹{myFeeRecord.dueAmount.toLocaleString('en-IN')}</strong> before {myFeeRecord.dueDate}.
+            </div>
+          )}
+
+          {myFeeRecord.status === 'DUE' && (
+            <button
+              onClick={() => setShowPayModal(true)}
+              className="w-full sm:w-auto px-6 py-3 bg-[#1b4d3e] hover:bg-[#143a2f] text-white font-extrabold text-xs rounded-2xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+            >
+              <CreditCard className="w-4 h-4 text-emerald-300" />
+              <span>Pay Outstanding Fee (₹{myFeeRecord.dueAmount.toLocaleString('en-IN')})</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Fee Payment Modal */}
+      {showPayModal && (
+        <StudentFeePaymentModal
+          student={currentStudent}
+          classId={studentClassId}
+          feeRecord={myFeeRecord}
+          onPaySuccess={(paymentDetails) => {
+            payStudentFee(studentClassId, currentStudent.rollNo, paymentDetails);
+          }}
+          onClose={() => setShowPayModal(false)}
+        />
+      )}
 
       {/* Apply for Pre-Planned Leave Section */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-md space-y-6">

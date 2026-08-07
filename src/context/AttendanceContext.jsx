@@ -419,6 +419,92 @@ export function AttendanceProvider({ children }) {
     localStorage.setItem('schoolzz_exam_rosters', JSON.stringify(examRosters));
   }, [examRosters]);
 
+  // Student Fees & Online Payments State
+  const [studentFees, setStudentFees] = useState(() => {
+    try {
+      const saved = localStorage.getItem('schoolzz_student_fees');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (e) {}
+
+    // Initial realistic fee records for all class rosters
+    const defaultFees = {};
+    const classIds = ['10-A_morning', '10-A_afternoon', '10-B_morning', '10-B_afternoon', '9-A_morning', '9-A_afternoon'];
+    
+    classIds.forEach(cId => {
+      defaultFees[cId] = Array.from({ length: 15 }, (_, i) => {
+        const rollNo = i + 1;
+        const isPaid = rollNo % 2 === 0 || rollNo === 2 || rollNo === 4;
+        return {
+          rollNo,
+          totalFee: 45000,
+          tuitionFee: 30000,
+          examFee: 5000,
+          labFee: 6000,
+          libraryFee: 4000,
+          paidAmount: isPaid ? 45000 : 30000,
+          dueAmount: isPaid ? 0 : 15000,
+          status: isPaid ? 'PAID' : 'DUE',
+          dueDate: '15 Aug 2026',
+          paidDate: isPaid ? '01 Aug 2026' : null,
+          transactionId: isPaid ? `TXN-UPI-${894000 + rollNo}` : null,
+          paymentMethod: isPaid ? 'UPI / Online' : null
+        };
+      });
+    });
+
+    return defaultFees;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('schoolzz_student_fees', JSON.stringify(studentFees));
+    } catch (e) {}
+  }, [studentFees]);
+
+  // Online Fee Payment Handler
+  const payStudentFee = (classId, rollNo, paymentDetails) => {
+    setStudentFees(prev => {
+      const classList = prev[classId] || Array.from({ length: 15 }, (_, i) => ({
+        rollNo: i + 1,
+        totalFee: 45000,
+        tuitionFee: 30000,
+        examFee: 5000,
+        labFee: 6000,
+        libraryFee: 4000,
+        paidAmount: 30000,
+        dueAmount: 15000,
+        status: 'DUE',
+        dueDate: '15 Aug 2026'
+      }));
+
+      const updatedList = classList.map(item => {
+        if (item.rollNo === Number(rollNo)) {
+          const txnId = `TXN-UPI-${Math.floor(100000 + Math.random() * 900000)}`;
+          return {
+            ...item,
+            paidAmount: item.totalFee,
+            dueAmount: 0,
+            status: 'PAID',
+            paymentMethod: paymentDetails?.paymentMethod || 'UPI (GPay / PhonePe / Paytm)',
+            transactionId: txnId,
+            paidDate: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+          };
+        }
+        return item;
+      });
+
+      return {
+        ...prev,
+        [classId]: updatedList
+      };
+    });
+
+    showToast(`Online Fee Payment of ₹${paymentDetails?.amount ? paymentDetails.amount.toLocaleString('en-IN') : '15,000'} successful!`, 'success');
+  };
+
   const createExamRoster = (classId, examName) => {
     const trimmed = examName.trim();
     const existing = examRosters.find(r => r.classId === classId && r.examName.toLowerCase() === trimmed.toLowerCase());
@@ -1589,6 +1675,8 @@ export function AttendanceProvider({ children }) {
         triggerManualReminder,
         studentMarks,
         saveStudentMarks,
+        studentFees,
+        payStudentFee,
         examRosters,
         createExamRoster,
         applyStudentLeave,
