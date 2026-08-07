@@ -5,10 +5,10 @@ import AttendanceDeck from '../subcomponents/AttendanceDeck';
 import AttendanceSummary from '../subcomponents/AttendanceSummary';
 import TeacherReports from '../subcomponents/TeacherReports';
 import AddMarksModal from '../subcomponents/AddMarksModal';
-import { School, Play, CheckCircle2, Clock, Users, UserCheck, ChevronRight, BarChart3, Sun, Moon, Award, BookOpen, FileCheck, ArrowLeft, PlusCircle, FileText, Calendar } from 'lucide-react';
+import { School, Play, CheckCircle2, Clock, Users, UserCheck, ChevronRight, BarChart3, Sun, Moon, Award, BookOpen, FileCheck, ArrowLeft, PlusCircle, FileText, Calendar, CreditCard, Send, Download, Search } from 'lucide-react';
 
 export default function TeacherPortal() {
-  const { classes, students, activeClassId, setActiveClassId, submitTeacherAttendance, submissions, currentUser, studentMarks, examRosters = [], createExamRoster } = useAttendance();
+  const { classes, students, activeClassId, setActiveClassId, submitTeacherAttendance, submissions, currentUser, studentMarks, studentFees = {}, examRosters = [], createExamRoster, showToast } = useAttendance();
 
   // Top Section Navigation: 'attendance' | 'reports' | 'marks'
   const [activeTab, setActiveTab] = useState('attendance');
@@ -454,40 +454,109 @@ export default function TeacherPortal() {
                       const classStudents = students[cls.id] || [];
                       const classMarksCount = (studentMarks[cls.id] || []).length;
 
+                      const classFeeRecords = studentFees[cls.id] || [];
+                      const totalClassReceivables = classFeeRecords.reduce((sum, f) => sum + (f.totalFee || 45000), 0);
+                      const classPaidSum = classFeeRecords.reduce((sum, f) => sum + (f.paidAmount || 0), 0);
+                      const classDueSum = classFeeRecords.reduce((sum, f) => sum + (f.dueAmount || 0), 0);
+                      const paidStudentsCount = classFeeRecords.filter(f => f.status === 'PAID').length;
+                      const dueStudentsCount = classFeeRecords.filter(f => f.status === 'DUE').length;
+
                       return (
-                        <div
-                          key={cls.id}
-                          className="border border-slate-200 rounded-2xl p-5 hover:border-[#1b4d3e] transition-all bg-gradient-to-br from-white to-slate-50 flex flex-col justify-between space-y-4 shadow-sm"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <span className="inline-block px-3 py-1 bg-emerald-100 text-[#1b4d3e] text-xs font-bold rounded-full mb-1">
-                                {cls.name}
+                        <React.Fragment key={cls.id}>
+                          {/* CARD 1: MARKS & EXAM ROSTER CARD */}
+                          <div className="border border-slate-200 rounded-2xl p-5 hover:border-[#1b4d3e] transition-all bg-gradient-to-br from-white to-slate-50 flex flex-col justify-between space-y-4 shadow-sm">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <span className="inline-block px-3 py-1 bg-emerald-100 text-[#1b4d3e] text-xs font-bold rounded-full mb-1">
+                                  {cls.name}
+                                </span>
+                                <div className="text-xs font-bold text-slate-500 flex items-center space-x-1.5">
+                                  <Users className="w-3.5 h-3.5" />
+                                  <span>{classStudents.length} Students Enrolled</span>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md">
+                                {classMarksCount} Scorecards Created
                               </span>
-                              <div className="text-xs font-bold text-slate-500 flex items-center space-x-1.5">
-                                <Users className="w-3.5 h-3.5" />
-                                <span>{classStudents.length} Students Enrolled</span>
+                            </div>
+
+                            <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                              <div className="text-xs text-slate-600 font-medium">
+                                Class Teacher: <span className="font-bold text-[#1b4d3e]">{cls.classTeacher}</span>
+                              </div>
+
+                              <button
+                                onClick={() => setSelectedMarksClassId(cls.id)}
+                                className="px-4 py-2.5 bg-[#1b4d3e] hover:bg-[#143c30] text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
+                              >
+                                <span>Open Class Roster</span>
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* CARD 2: CLASS STUDENT FEE & FINANCIAL STATUS CARD (In highlighted space) */}
+                          <div className="border border-slate-200 rounded-2xl p-5 bg-gradient-to-br from-[#1b4d3e] to-[#143c30] text-white flex flex-col justify-between space-y-4 shadow-sm">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between border-b border-emerald-700/60 pb-3">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-8 h-8 rounded-xl bg-emerald-800/90 text-emerald-200 flex items-center justify-center border border-emerald-600">
+                                    <CreditCard className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <span className="text-[10px] font-extrabold uppercase text-emerald-300 block">Financial Status</span>
+                                    <h3 className="text-sm font-black text-white">{cls.name} Fee Overview</h3>
+                                  </div>
+                                </div>
+                                <span className="bg-emerald-800 text-emerald-200 border border-emerald-600 text-[10px] font-bold px-2.5 py-1 rounded-full font-mono">
+                                  {paidStudentsCount}/{classStudents.length || 15} Paid
+                                </span>
+                              </div>
+
+                              {/* KPI Grid */}
+                              <div className="grid grid-cols-3 gap-2 text-center">
+                                <div className="bg-[#143c30] p-2.5 rounded-xl border border-emerald-700/50">
+                                  <span className="text-[9px] font-bold text-emerald-300 uppercase block">Total Fee</span>
+                                  <span className="text-xs font-black text-white font-mono">₹{totalClassReceivables.toLocaleString('en-IN')}</span>
+                                </div>
+
+                                <div className="bg-emerald-900/60 p-2.5 rounded-xl border border-emerald-500/40">
+                                  <span className="text-[9px] font-bold text-emerald-300 uppercase block">Collected</span>
+                                  <span className="text-xs font-black text-emerald-300 font-mono">₹{classPaidSum.toLocaleString('en-IN')}</span>
+                                </div>
+
+                                <div className="bg-amber-950/60 p-2.5 rounded-xl border border-amber-500/40">
+                                  <span className="text-[9px] font-bold text-amber-300 uppercase block">Due Balance</span>
+                                  <span className="text-xs font-black text-amber-400 font-mono">₹{classDueSum.toLocaleString('en-IN')}</span>
+                                </div>
                               </div>
                             </div>
-                            <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md">
-                              {classMarksCount} Scorecards Created
-                            </span>
-                          </div>
 
-                          <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-                            <div className="text-xs text-slate-600 font-medium">
-                              Class Teacher: <span className="font-bold text-[#1b4d3e]">{cls.classTeacher}</span>
+                            <div className="pt-2 border-t border-emerald-700/60 flex items-center justify-between">
+                              <div className="text-[11px] text-emerald-200/90 font-medium">
+                                {dueStudentsCount > 0 ? (
+                                  <span className="text-amber-300 font-bold flex items-center space-x-1">
+                                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                                    <span>{dueStudentsCount} Student(s) Fee Due</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-emerald-300 font-bold flex items-center space-x-1">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span>All Class Fees Cleared!</span>
+                                  </span>
+                                )}
+                              </div>
+
+                              <button
+                                onClick={() => setSelectedMarksClassId(cls.id)}
+                                className="px-4 py-2.5 bg-emerald-100 hover:bg-white text-[#1b4d3e] font-extrabold text-xs rounded-xl flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
+                              >
+                                <span>Check Fee Roster</span>
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
                             </div>
-
-                            <button
-                              onClick={() => setSelectedMarksClassId(cls.id)}
-                              className="px-4 py-2.5 bg-[#1b4d3e] hover:bg-[#143c30] text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
-                            >
-                              <span>Open Class Roster</span>
-                              <ChevronRight className="w-4 h-4" />
-                            </button>
                           </div>
-                        </div>
+                        </React.Fragment>
                       );
                     })}
                   </div>
