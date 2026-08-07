@@ -41,11 +41,11 @@ export default function ClassFeeRosterModal({ classId, className, studentList = 
   const paidCount = combinedFeeList.filter(f => f.status === 'PAID').length;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-4xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-scale-up my-8">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 z-50">
+      <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-scale-up">
         
-        {/* Header */}
-        <div className="bg-[#1b4d3e] text-white p-6 flex items-center justify-between">
+        {/* Header - Always pinned top */}
+        <div className="bg-[#1b4d3e] text-white p-5 sm:p-6 flex items-center justify-between shrink-0 border-b border-emerald-800">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-2xl bg-emerald-800 text-emerald-200 flex items-center justify-center border border-emerald-600">
               <CreditCard className="w-5 h-5 text-emerald-300" />
@@ -67,8 +67,8 @@ export default function ClassFeeRosterModal({ classId, className, studentList = 
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-6 space-y-5">
+        {/* Scrollable Body Container */}
+        <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
           
           {/* Quick Metrics Bar */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -212,11 +212,14 @@ export default function ClassFeeRosterModal({ classId, className, studentList = 
 
         </div>
 
-        {/* Footer */}
-        <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
+        {/* Footer - Always pinned bottom */}
+        <div className="bg-slate-50 p-4 border-t border-slate-200 flex items-center justify-between shrink-0">
+          <span className="text-xs text-slate-500 font-semibold">
+            Showing {filteredList.length} of {studentList.length} student records for {className}
+          </span>
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-[#1b4d3e] text-white text-xs font-bold rounded-xl hover:bg-[#143a2f] transition-all cursor-pointer"
+            className="px-6 py-2 bg-[#1b4d3e] text-white text-xs font-bold rounded-xl hover:bg-[#143a2f] transition-all cursor-pointer shadow-md"
           >
             Close Roster
           </button>
