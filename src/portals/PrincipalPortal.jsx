@@ -192,25 +192,13 @@ export default function PrincipalPortal() {
         <button
           onClick={() => setActiveTab('scorecards')}
           className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'scorecards'
+            activeTab === 'scorecards' || activeTab === 'marks'
               ? 'bg-[#1b4d3e] text-white shadow-md'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           <Award className="w-4 h-4 text-emerald-400" />
           <span>Academic Scorecards & Exam Marks</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('marks')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'marks'
-              ? 'bg-[#1b4d3e] text-white shadow-md'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <Award className="w-4 h-4" />
-          <span>Academic Scorecards & Marks</span>
         </button>
 
         <button
@@ -611,7 +599,7 @@ export default function PrincipalPortal() {
       {activeTab === 'reports' && <PrincipalReports />}
 
       {/* TAB: ACADEMIC EXAM MARKS & SCORECARDS */}
-      {activeTab === 'scorecards' && (
+      {(activeTab === 'scorecards' || activeTab === 'marks') && (
         <AcademicScorecardManager userRole="principal" />
       )}
 
