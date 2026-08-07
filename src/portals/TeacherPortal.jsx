@@ -5,6 +5,7 @@ import AttendanceDeck from '../subcomponents/AttendanceDeck';
 import AttendanceSummary from '../subcomponents/AttendanceSummary';
 import TeacherReports from '../subcomponents/TeacherReports';
 import AddMarksModal from '../subcomponents/AddMarksModal';
+import ClassFeeRosterModal from '../subcomponents/ClassFeeRosterModal';
 import { School, Play, CheckCircle2, Clock, Users, UserCheck, ChevronRight, BarChart3, Sun, Moon, Award, BookOpen, FileCheck, ArrowLeft, PlusCircle, FileText, Calendar, CreditCard, Send, Download, Search } from 'lucide-react';
 
 export default function TeacherPortal() {
@@ -17,8 +18,9 @@ export default function TeacherPortal() {
   const [mode, setMode] = useState('class_select');
   const [currentMarkedRecords, setCurrentMarkedRecords] = useState([]);
 
-  // Marks Entry state
+  // Marks & Fee Entry state
   const [selectedMarksClassId, setSelectedMarksClassId] = useState(null);
+  const [selectedFeeClassId, setSelectedFeeClassId] = useState(null);
   const [selectedStudentForMarks, setSelectedStudentForMarks] = useState(null);
   const [selectedExamName, setSelectedExamName] = useState('Mid-Term Examination 2026');
   const [showCreateRosterModal, setShowCreateRosterModal] = useState(false);
@@ -548,7 +550,7 @@ export default function TeacherPortal() {
                               </div>
 
                               <button
-                                onClick={() => setSelectedMarksClassId(cls.id)}
+                                onClick={() => setSelectedFeeClassId(cls.id)}
                                 className="px-4 py-2.5 bg-emerald-100 hover:bg-white text-[#1b4d3e] font-extrabold text-xs rounded-xl flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
                               >
                                 <span>Check Fee Roster</span>
@@ -815,6 +817,18 @@ export default function TeacherPortal() {
 
               </div>
             </div>
+          )}
+
+          {/* CLASS STUDENT FEE ROSTER MODAL */}
+          {selectedFeeClassId && (
+            <ClassFeeRosterModal
+              classId={selectedFeeClassId}
+              className={classes.find(c => c.id === selectedFeeClassId)?.name || 'Class Section'}
+              studentList={students[selectedFeeClassId] || []}
+              feeRecords={studentFees[selectedFeeClassId] || []}
+              showToast={showToast}
+              onClose={() => setSelectedFeeClassId(null)}
+            />
           )}
 
         </div>
