@@ -12,8 +12,11 @@ import { Shield, Bell, CheckCircle2, XCircle, MessageSquare, BarChart3, Sun, Moo
 import confetti from 'canvas-confetti';
 
 export default function PrincipalPortal() {
-  const { classes, teachers, students, submissions, approveAttendance, declineAttendance, whatsappLogs, setActiveWhatsAppPreview, leaveApplications = [], approveLeaveApplication, declineLeaveApplication, attendanceReminders = [], triggerManualReminder, studentMarks, studentFees = {}, showToast, activeSchool } = useAttendance();
+  const { classes, teachers, students, submissions, approveAttendance, declineAttendance, whatsappLogs, setActiveWhatsAppPreview, leaveApplications = [], approveLeaveApplication, declineLeaveApplication, teacherLeaveRequests = [], approveTeacherLeaveRequest, declineTeacherLeaveRequest, attendanceReminders = [], triggerManualReminder, studentMarks, studentFees = {}, showToast, activeSchool } = useAttendance();
   const [activeTab, setActiveTab] = useState('approvals'); // 'approvals' | 'overview' | 'manage' | 'whatsapp' | 'scorecards' | 'fees'
+
+  // Pending Teacher Leave Applications
+  const pendingTeacherLeaveRequests = teacherLeaveRequests.filter(r => r.status === 'PENDING');
 
   // Teacher Management & Leave State
   const [selectedTeacherForLeave, setSelectedTeacherForLeave] = useState(null);
@@ -151,8 +154,8 @@ export default function PrincipalPortal() {
           }`}
         >
           <Bell className="w-4 h-4" />
-          <span>Pending Approvals ({pendingList.length + pendingLeaveApps.length})</span>
-          {(pendingList.length > 0 || pendingLeaveApps.length > 0) && (
+          <span>Pending Approvals ({pendingList.length + pendingLeaveApps.length + pendingTeacherLeaveRequests.length})</span>
+          {(pendingList.length > 0 || pendingLeaveApps.length > 0 || pendingTeacherLeaveRequests.length > 0) && (
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
           )}
         </button>
@@ -233,6 +236,85 @@ export default function PrincipalPortal() {
       {/* TAB 1: PENDING APPROVALS */}
       {activeTab === 'approvals' && (
         <div className="space-y-6">
+
+          {/* SECTION A.1: FACULTY TEACHER LEAVE APPLICATIONS */}
+          <div className="bg-white border border-amber-200 rounded-3xl p-6 shadow-md space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <h2 className="text-base font-extrabold text-slate-900 flex items-center space-x-2">
+                <Calendar className="w-5 h-5 text-amber-600" />
+                <span>Faculty Teacher Leave Applications ({pendingTeacherLeaveRequests.length} Pending Approval)</span>
+              </h2>
+              <span className="text-xs text-amber-800 font-bold bg-amber-100 px-2.5 py-0.5 rounded-full">Principal Review</span>
+            </div>
+
+            {pendingTeacherLeaveRequests.length === 0 ? (
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 text-xs flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>No pending faculty teacher leave applications awaiting approval.</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {pendingTeacherLeaveRequests.map(req => {
+                  const reqTeacherObj = teachers.find(t => t.id === req.teacherId || t.name === req.teacherName || t.username === req.teacherId);
+
+                  return (
+                    <div key={req.id} className="p-4.5 rounded-2xl border border-amber-300 bg-amber-50/60 space-y-3 relative shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="bg-[#1b4d3e] text-white text-[11px] font-mono font-extrabold px-2.5 py-0.5 rounded-md">
+                            {req.leaveType}
+                          </span>
+                          <h4 className="font-extrabold text-slate-900 text-sm">{req.teacherName}</h4>
+                        </div>
+                        <span className="bg-white text-slate-800 border border-slate-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
+                          {req.className}
+                        </span>
+                      </div>
+
+                      <div className="text-xs space-y-1 bg-white p-3 rounded-xl border border-slate-200">
+                        <div className="text-slate-500">
+                          Leave Duration: <span className="font-mono text-slate-900 font-extrabold">📅 {req.startDate} to {req.endDate} ({req.durationLabel})</span>
+                        </div>
+                        <div className="text-slate-700 font-medium">
+                          Reason: <span className="italic">"{req.reason}"</span>
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-2 pt-1">
+                        <button
+                          onClick={() => {
+                            const r = prompt('Enter decline reason for teacher leave:', 'Leave request not approved.');
+                            if (r !== null) {
+                              declineTeacherLeaveRequest(req.id);
+                              showToast(`Leave request for ${req.teacherName} DECLINED.`, 'info');
+                            }
+                          }}
+                          className="w-1/2 py-2 rounded-xl border border-rose-300 text-rose-700 hover:bg-rose-50 text-xs font-bold transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                        >
+                          <XCircle className="w-4 h-4" />
+                          <span>Decline Leave</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            approveTeacherLeaveRequest(req.id);
+                            showToast(`Leave for ${req.teacherName} APPROVED! Opening Substitute Assignment...`, 'success');
+                            if (reqTeacherObj) {
+                              setSelectedTeacherForLeave(reqTeacherObj);
+                            }
+                          }}
+                          className="w-1/2 py-2 rounded-xl bg-[#1b4d3e] hover:bg-[#143c30] text-white text-xs font-bold shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                        >
+                          <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+                          <span>Approve & Assign Substitute</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* SECTION A: PRE-PLANNED STUDENT LEAVE APPLICATIONS */}
           <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md space-y-4">

@@ -15,17 +15,45 @@ export default function AcademicScorecardManager({ userRole = 'teacher', targetC
   const [editingStudent, setEditingStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const activeClassObj = classes.find(c => c.id === selectedClassId) || classes[0];
-  const classStudentList = students[selectedClassId] || [];
+  const isAllClasses = selectedClassId === 'all';
+  const activeClassObj = isAllClasses ? { name: 'All Classes (All Sections)' } : (classes.find(c => c.id === selectedClassId) || classes[0]);
+
+  // Gather student list (All Classes vs Single Class)
+  let classStudentList = [];
+  if (isAllClasses) {
+    const allStMap = {};
+    classes.forEach(c => {
+      (students[c.id] || []).forEach(st => {
+        const key = `${c.name}_${st.rollNo}`;
+        if (!allStMap[key]) {
+          allStMap[key] = { ...st, className: c.name, classId: c.id };
+        }
+      });
+    });
+    classStudentList = Object.values(allStMap);
+  } else {
+    classStudentList = (students[selectedClassId] || []).map(st => ({
+      ...st,
+      className: classes.find(c => c.id === selectedClassId)?.name || ''
+    }));
+  }
 
   // Filter students based on search
   const filteredStudents = classStudentList.filter(s =>
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    String(s.rollNo).includes(searchQuery)
+    String(s.rollNo).includes(searchQuery) ||
+    (s.className && s.className.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // Computed metrics for current selected class
-  const classMarksList = (studentMarks[selectedClassId] || []).filter(m => m.examName === selectedExamTerm);
+  // Computed metrics for current selected class or all classes
+  let classMarksList = [];
+  if (isAllClasses) {
+    Object.values(studentMarks).forEach(mList => {
+      (mList || []).filter(m => m.examName === selectedExamTerm).forEach(m => classMarksList.push(m));
+    });
+  } else {
+    classMarksList = (studentMarks[selectedClassId] || []).filter(m => m.examName === selectedExamTerm);
+  }
 
   const totalEvaluated = classMarksList.length;
   const passedCount = classMarksList.filter(m => m.status === 'PASSED').length;
@@ -66,6 +94,7 @@ export default function AcademicScorecardManager({ userRole = 'teacher', targetC
               onChange={(e) => setSelectedClassId(e.target.value)}
               className="bg-white/10 text-white border border-emerald-400/30 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:bg-emerald-950/80 cursor-pointer"
             >
+              <option value="all" className="text-slate-900 font-bold">🌟 All Classes (All Sections)</option>
               {Array.from(new Set(classes.map(c => c.name))).map(className => {
                 const cObj = classes.find(c => c.name === className);
                 return (

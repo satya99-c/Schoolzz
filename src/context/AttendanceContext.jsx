@@ -249,6 +249,53 @@ export function AttendanceProvider({ children }) {
     setSubstituteAssignments(prev => prev.filter(a => a.id !== assignmentId));
   };
 
+  // Teacher Leave Applications state
+  const [teacherLeaveRequests, setTeacherLeaveRequests] = useState(() => {
+    try {
+      const saved = localStorage.getItem('schoolzz_teacher_leave_requests');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [
+      {
+        id: 't_leave_1',
+        teacherId: 'teacher1',
+        teacherName: 'Mr. Sharma (Teacher 1)',
+        leaveType: 'Casual Leave',
+        className: 'Class 10 - Section A',
+        startDate: '2026-08-11',
+        endDate: '2026-08-12',
+        durationLabel: '2 Days',
+        reason: 'Attending family function in hometown',
+        status: 'PENDING',
+        createdAt: '2026-08-10T10:30:00.000Z'
+      }
+    ];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('schoolzz_teacher_leave_requests', JSON.stringify(teacherLeaveRequests));
+    } catch (e) {}
+  }, [teacherLeaveRequests]);
+
+  const submitTeacherLeaveRequest = (reqData) => {
+    const newReq = {
+      id: `t_leave_${Date.now()}`,
+      status: 'PENDING',
+      createdAt: new Date().toISOString(),
+      ...reqData
+    };
+    setTeacherLeaveRequests(prev => [newReq, ...prev]);
+  };
+
+  const approveTeacherLeaveRequest = (reqId) => {
+    setTeacherLeaveRequests(prev => prev.map(r => r.id === reqId ? { ...r, status: 'APPROVED' } : r));
+  };
+
+  const declineTeacherLeaveRequest = (reqId) => {
+    setTeacherLeaveRequests(prev => prev.map(r => r.id === reqId ? { ...r, status: 'DECLINED' } : r));
+  };
+
   // Current logged in user (ALWAYS defaults to null on page load so shareable links ALWAYS display the Login Page!)
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -1691,6 +1738,10 @@ export function AttendanceProvider({ children }) {
         substituteAssignments,
         assignSubstituteTeacher,
         cancelSubstituteAssignment,
+        teacherLeaveRequests,
+        submitTeacherLeaveRequest,
+        approveTeacherLeaveRequest,
+        declineTeacherLeaveRequest,
         onboardTeacher,
         createClassAndStudents,
         assignClassTeacher,

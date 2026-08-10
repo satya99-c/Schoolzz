@@ -5,6 +5,7 @@ import AttendanceDeck from '../subcomponents/AttendanceDeck';
 import AttendanceSummary from '../subcomponents/AttendanceSummary';
 import TeacherReports from '../subcomponents/TeacherReports';
 import AddMarksModal from '../subcomponents/AddMarksModal';
+import TeacherApplyLeaveModal from '../subcomponents/TeacherApplyLeaveModal';
 import { School, Play, CheckCircle2, Clock, Users, UserCheck, ChevronRight, BarChart3, Sun, Moon, Award, BookOpen, FileCheck, ArrowLeft, PlusCircle, FileText, Calendar, CreditCard, Send, Download, Search } from 'lucide-react';
 
 export default function TeacherPortal() {
@@ -16,6 +17,9 @@ export default function TeacherPortal() {
   // Mode inside Attendance: 'class_select' | 'deck' | 'summary' | 'submitted_success'
   const [mode, setMode] = useState('class_select');
   const [currentMarkedRecords, setCurrentMarkedRecords] = useState([]);
+
+  // Leave Modal State
+  const [showApplyLeaveModal, setShowApplyLeaveModal] = useState(false);
 
   // Marks & Fee Entry state
   const [selectedMarksClassId, setSelectedMarksClassId] = useState(null);
@@ -172,7 +176,7 @@ export default function TeacherPortal() {
               )}
 
               {/* Header Banner */}
-              <div className="bg-[#1b4d3e] text-white p-6 md:p-8 rounded-3xl shadow-lg relative overflow-hidden">
+              <div className="bg-[#1b4d3e] text-white p-6 md:p-8 rounded-3xl shadow-lg relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="max-w-2xl">
                   <div className="inline-flex items-center space-x-2 bg-emerald-800/80 text-emerald-100 text-xs px-3 py-1 rounded-full border border-emerald-400/30 font-semibold mb-3">
                     <UserCheck className="w-4 h-4" />
@@ -181,6 +185,14 @@ export default function TeacherPortal() {
                   <h1 className="text-2xl md:text-3xl font-extrabold text-white">Class Attendance Center</h1>
                   <p className="text-sm text-emerald-100/90 mt-1">Select your assigned morning or afternoon section to begin attendance.</p>
                 </div>
+
+                <button
+                  onClick={() => setShowApplyLeaveModal(true)}
+                  className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition-all flex items-center space-x-2 shadow-md cursor-pointer border border-amber-300 shrink-0"
+                >
+                  <Calendar className="w-4 h-4 text-slate-900" />
+                  <span>📝 Apply for Leave</span>
+                </button>
               </div>
 
               {/* Classes Grid */}
@@ -1067,6 +1079,14 @@ export default function TeacherPortal() {
         </div>
         );
       })()}
+
+      {/* TEACHER APPLY LEAVE MODAL */}
+      {showApplyLeaveModal && (
+        <TeacherApplyLeaveModal
+          teacher={currentUser}
+          onClose={() => setShowApplyLeaveModal(false)}
+        />
+      )}
 
     </div>
   );
