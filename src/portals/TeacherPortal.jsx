@@ -498,53 +498,53 @@ export default function TeacherPortal() {
                             </div>
                           </div>
 
-                          {/* CARD 2: CLASS STUDENT FEE & FINANCIAL STATUS CARD (In highlighted space) */}
-                          <div className="border border-slate-200 rounded-2xl p-5 bg-gradient-to-br from-[#1b4d3e] to-[#143c30] text-white flex flex-col justify-between space-y-4 shadow-sm">
+                          {/* CARD 2: CLASS STUDENT FEE & FINANCIAL STATUS CARD (Matching light color theme of left card) */}
+                          <div className="border border-slate-200 rounded-2xl p-5 hover:border-[#1b4d3e] transition-all bg-gradient-to-br from-white to-slate-50 flex flex-col justify-between space-y-4 shadow-sm">
                             <div className="space-y-3">
-                              <div className="flex items-center justify-between border-b border-emerald-700/60 pb-3">
+                              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                                 <div className="flex items-center space-x-2">
-                                  <div className="w-8 h-8 rounded-xl bg-emerald-800/90 text-emerald-200 flex items-center justify-center border border-emerald-600">
-                                    <CreditCard className="w-4 h-4" />
+                                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-[#1b4d3e] flex items-center justify-center border border-emerald-200">
+                                    <CreditCard className="w-4 h-4 text-[#1b4d3e]" />
                                   </div>
                                   <div>
-                                    <span className="text-[10px] font-extrabold uppercase text-emerald-300 block">Financial Status</span>
-                                    <h3 className="text-sm font-black text-white">{cls.name} Fee Overview</h3>
+                                    <span className="text-[10px] font-extrabold uppercase text-[#1b4d3e] block">Financial Status</span>
+                                    <h3 className="text-sm font-black text-slate-900">{cls.name} Fee Overview</h3>
                                   </div>
                                 </div>
-                                <span className="bg-emerald-800 text-emerald-200 border border-emerald-600 text-[10px] font-bold px-2.5 py-1 rounded-full font-mono">
+                                <span className="bg-emerald-100 text-[#1b4d3e] border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full font-mono">
                                   {paidStudentsCount}/{classStudents.length || 15} Paid
                                 </span>
                               </div>
 
                               {/* KPI Grid */}
                               <div className="grid grid-cols-3 gap-2 text-center">
-                                <div className="bg-[#143c30] p-2.5 rounded-xl border border-emerald-700/50">
-                                  <span className="text-[9px] font-bold text-emerald-300 uppercase block">Total Fee</span>
-                                  <span className="text-xs font-black text-white font-mono">₹{totalClassReceivables.toLocaleString('en-IN')}</span>
+                                <div className="bg-slate-100/70 p-2.5 rounded-xl border border-slate-200">
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase block">Total Fee</span>
+                                  <span className="text-xs font-black text-slate-900 font-mono">₹{totalClassReceivables.toLocaleString('en-IN')}</span>
                                 </div>
 
-                                <div className="bg-emerald-900/60 p-2.5 rounded-xl border border-emerald-500/40">
-                                  <span className="text-[9px] font-bold text-emerald-300 uppercase block">Collected</span>
-                                  <span className="text-xs font-black text-emerald-300 font-mono">₹{classPaidSum.toLocaleString('en-IN')}</span>
+                                <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                                  <span className="text-[9px] font-bold text-emerald-800 uppercase block">Collected</span>
+                                  <span className="text-xs font-black text-emerald-800 font-mono">₹{classPaidSum.toLocaleString('en-IN')}</span>
                                 </div>
 
-                                <div className="bg-amber-950/60 p-2.5 rounded-xl border border-amber-500/40">
-                                  <span className="text-[9px] font-bold text-amber-300 uppercase block">Due Balance</span>
-                                  <span className="text-xs font-black text-amber-400 font-mono">₹{classDueSum.toLocaleString('en-IN')}</span>
+                                <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                                  <span className="text-[9px] font-bold text-amber-900 uppercase block">Due Balance</span>
+                                  <span className="text-xs font-black text-amber-900 font-mono">₹{classDueSum.toLocaleString('en-IN')}</span>
                                 </div>
                               </div>
                             </div>
 
-                            <div className="pt-2 border-t border-emerald-700/60 flex items-center justify-between">
-                              <div className="text-[11px] text-emerald-200/90 font-medium">
+                            <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                              <div className="text-[11px] text-slate-600 font-medium">
                                 {dueStudentsCount > 0 ? (
-                                  <span className="text-amber-300 font-bold flex items-center space-x-1">
-                                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                                  <span className="text-amber-800 font-bold flex items-center space-x-1">
+                                    <Clock className="w-3.5 h-3.5 text-amber-600" />
                                     <span>{dueStudentsCount} Student(s) Fee Due</span>
                                   </span>
                                 ) : (
-                                  <span className="text-emerald-300 font-bold flex items-center space-x-1">
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span className="text-emerald-700 font-bold flex items-center space-x-1">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                                     <span>All Class Fees Cleared!</span>
                                   </span>
                                 )}
@@ -552,7 +552,7 @@ export default function TeacherPortal() {
 
                               <button
                                 onClick={() => setSelectedFeeClassId(cls.id)}
-                                className="px-4 py-2.5 bg-emerald-100 hover:bg-white text-[#1b4d3e] font-extrabold text-xs rounded-xl flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
+                                className="px-4 py-2.5 bg-[#1b4d3e] hover:bg-[#143c30] text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
                               >
                                 <span>Check Fee Roster</span>
                                 <ChevronRight className="w-4 h-4" />
