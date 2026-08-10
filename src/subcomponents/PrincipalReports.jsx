@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAttendance } from '../context/AttendanceContext';
 import { getTodayLocalDateStr } from '../utils/dateUtils';
+import { downloadReportCSV, downloadReportPDF } from '../utils/reportExporter';
 import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { Shield, BarChart3, PieChart as PieIcon, AlertTriangle, Search, Filter, Layers, TrendingUp, CalendarRange, School, UserCheck, CheckCircle2 } from 'lucide-react';
+import { Shield, BarChart3, PieChart as PieIcon, AlertTriangle, Search, Filter, Layers, TrendingUp, CalendarRange, School, UserCheck, CheckCircle2, Download, Printer } from 'lucide-react';
 import StudentReportModal from './StudentReportModal';
 
 const COLORS = ['#10b981', '#f59e0b', '#ef4444'];
@@ -382,6 +383,35 @@ export default function PrincipalReports() {
             >
               <CalendarRange className="w-3.5 h-3.5" />
               <span>Date Range</span>
+            </button>
+          </div>
+
+          {/* Export & Download Actions */}
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => downloadReportPDF({
+                title: `Master School Attendance Report (${selectedShift})`,
+                schoolName: 'Sunshine International School',
+                dateRange: timeHorizon === 'custom' ? `${startDate} to ${endDate}` : timeHorizon.toUpperCase(),
+                records: filteredStudents,
+                userRole: 'Principal Executive'
+              })}
+              className="px-3.5 py-2 bg-[#a3d9b1] text-[#1b4d3e] hover:bg-white text-xs font-black rounded-xl transition-all flex items-center space-x-1.5 shadow-sm cursor-pointer border border-emerald-300"
+            >
+              <Printer className="w-4 h-4 text-[#1b4d3e]" />
+              <span>Print / Download PDF</span>
+            </button>
+
+            <button
+              onClick={() => downloadReportCSV({
+                title: `Master_School_Attendance_${selectedShift.replace(/\s+/g, '_')}`,
+                dateRange: timeHorizon === 'custom' ? `${startDate}_to_${endDate}` : timeHorizon,
+                records: filteredStudents
+              })}
+              className="px-3.5 py-2 bg-[#143c30] text-emerald-100 hover:text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5 border border-emerald-600/40 cursor-pointer shadow-sm"
+            >
+              <Download className="w-4 h-4 text-emerald-300" />
+              <span>Export CSV</span>
             </button>
           </div>
         </div>

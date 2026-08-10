@@ -8,7 +8,7 @@ import AddMarksModal from '../subcomponents/AddMarksModal';
 import { School, Play, CheckCircle2, Clock, Users, UserCheck, ChevronRight, BarChart3, Sun, Moon, Award, BookOpen, FileCheck, ArrowLeft, PlusCircle, FileText, Calendar, CreditCard, Send, Download, Search } from 'lucide-react';
 
 export default function TeacherPortal() {
-  const { classes, students, activeClassId, setActiveClassId, submitTeacherAttendance, submissions, currentUser, studentMarks, studentFees = {}, examRosters = [], createExamRoster, showToast } = useAttendance();
+  const { classes, students, activeClassId, setActiveClassId, submitTeacherAttendance, submissions, currentUser, studentMarks, studentFees = {}, substituteAssignments = [], examRosters = [], createExamRoster, showToast } = useAttendance();
 
   // Top Section Navigation: 'attendance' | 'reports' | 'marks'
   const [activeTab, setActiveTab] = useState('attendance');
@@ -31,8 +31,20 @@ export default function TeacherPortal() {
   const [showAllPresentModal, setShowAllPresentModal] = useState(false);
   const [pendingStartClassId, setPendingStartClassId] = useState(null);
 
-  // Filter classes assigned to THIS teacher
-  const assignedIds = currentUser?.assignedClasses || ['10-A_morning', '10-B_afternoon'];
+  // Extract substitute assignments where THIS teacher is acting as substitute
+  const mySubstituteAssignments = substituteAssignments.filter(a => 
+    a.substituteTeacherId === currentUser?.id || a.substituteTeacherName === currentUser?.name
+  );
+
+  // Extract substitute assignments where THIS teacher is on leave
+  const myLeaveAssignments = substituteAssignments.filter(a => 
+    a.leaveTeacherId === currentUser?.id || a.leaveTeacherName === currentUser?.name
+  );
+
+  const substituteClassIds = mySubstituteAssignments.map(a => a.classId);
+
+  // Filter classes assigned to THIS teacher (primary + substitute covered classes)
+  const assignedIds = Array.from(new Set([...(currentUser?.assignedClasses || ['10-A_morning', '10-B_afternoon']), ...substituteClassIds]));
   const assignedClasses = classes.filter(c => assignedIds.includes(c.id));
 
   const activeClassObj = classes.find(c => c.id === activeClassId) || assignedClasses[0] || classes[0];
@@ -146,6 +158,19 @@ export default function TeacherPortal() {
           {mode === 'class_select' && (
             <div className="space-y-6 animate-fade-in">
               
+              {/* Approved Leave Notice Banner */}
+              {myLeaveAssignments.length > 0 && (
+                <div className="bg-amber-50 border border-amber-300 p-4.5 rounded-3xl flex items-start space-x-3 text-xs text-amber-900 shadow-sm">
+                  <Calendar className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-extrabold text-sm block">🏖️ Approved Leave Notice</span>
+                    <span>
+                      You are currently on approved leave. Covered by <strong>{myLeaveAssignments.map(a => `${a.substituteTeacherName} for ${a.className} (${a.startDate} to ${a.endDate})`).join(', ')}</strong>.
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* Header Banner */}
               <div className="bg-[#1b4d3e] text-white p-6 md:p-8 rounded-3xl shadow-lg relative overflow-hidden">
                 <div className="max-w-2xl">
@@ -164,6 +189,7 @@ export default function TeacherPortal() {
                   const clsStudents = students[cls.id] || [];
                   const sub = submissions[`${cls.id}_${dateStr}`];
                   const isSubmitted = Boolean(sub);
+                  const subInfo = mySubstituteAssignments.find(a => a.classId === cls.id);
 
                   return (
                     <div
@@ -171,6 +197,13 @@ export default function TeacherPortal() {
                       className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md hover:shadow-xl transition-all space-y-4 flex flex-col justify-between"
                     >
                       <div className="space-y-3">
+                        {subInfo && (
+                          <div className="bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1 rounded-xl text-[11px] font-bold flex items-center space-x-1.5 w-fit shadow-2xs">
+                            <Calendar className="w-3.5 h-3.5 text-amber-700" />
+                            <span>🔄 Temporary Substitute Class (Covering for {subInfo.leaveTeacherName} • {subInfo.startDate} to {subInfo.endDate})</span>
+                          </div>
+                        )}
+
                         <div className="flex items-start justify-between">
                           <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                             <span className="text-xs font-bold text-[#1b4d3e] bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 rounded-full inline-block shadow-sm">

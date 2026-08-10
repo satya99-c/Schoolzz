@@ -6,13 +6,17 @@ import OnboardTeacherModal from '../components/OnboardTeacherModal';
 import CreateClassModal from '../components/CreateClassModal';
 import StudentReportModal from '../subcomponents/StudentReportModal';
 import AssignTeacherModal from '../subcomponents/AssignTeacherModal';
+import TeacherLeaveModal from '../subcomponents/TeacherLeaveModal';
 import AcademicScorecardManager from '../subcomponents/AcademicScorecardManager';
-import { Shield, Bell, CheckCircle2, XCircle, MessageSquare, BarChart3, Sun, Moon, AlertTriangle, UserPlus, PlusCircle, Users, School, Award, ArrowLeft, ChevronRight, FileText, Copy, GraduationCap, UserCheck, CreditCard, Clock, Search, Send, Download } from 'lucide-react';
+import { Shield, Bell, CheckCircle2, XCircle, MessageSquare, BarChart3, Sun, Moon, AlertTriangle, UserPlus, PlusCircle, Users, School, Award, ArrowLeft, ChevronRight, FileText, Copy, GraduationCap, UserCheck, CreditCard, Clock, Search, Send, Download, Calendar } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function PrincipalPortal() {
   const { classes, teachers, students, submissions, approveAttendance, declineAttendance, whatsappLogs, setActiveWhatsAppPreview, leaveApplications = [], approveLeaveApplication, declineLeaveApplication, attendanceReminders = [], triggerManualReminder, studentMarks, studentFees = {}, showToast, activeSchool } = useAttendance();
   const [activeTab, setActiveTab] = useState('approvals'); // 'approvals' | 'overview' | 'manage' | 'whatsapp' | 'scorecards' | 'fees'
+
+  // Teacher Management & Leave State
+  const [selectedTeacherForLeave, setSelectedTeacherForLeave] = useState(null);
 
   // Fee Overview State
   const [feeClassFilter, setFeeClassFilter] = useState('all');
@@ -490,21 +494,31 @@ export default function PrincipalPortal() {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2 mt-2">
-                    <button
-                      onClick={() => setAssigningTeacher(teacher)}
-                      className="flex-1 py-2 bg-emerald-50 hover:bg-[#1b4d3e] text-[#1b4d3e] hover:text-white border border-emerald-300 font-bold text-xs rounded-xl flex items-center justify-center space-x-1 transition-all cursor-pointer shadow-2xs"
-                    >
-                      <UserCheck className="w-3.5 h-3.5" />
-                      <span>{classTeacherObj ? 'Change Class Teacher' : 'Assign Class Teacher'}</span>
-                    </button>
+                  <div className="space-y-1.5 mt-2">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setAssigningTeacher(teacher)}
+                        className="flex-1 py-2 bg-emerald-50 hover:bg-[#1b4d3e] text-[#1b4d3e] hover:text-white border border-emerald-300 font-bold text-xs rounded-xl flex items-center justify-center space-x-1 transition-all cursor-pointer shadow-2xs"
+                      >
+                        <UserCheck className="w-3.5 h-3.5" />
+                        <span>{classTeacherObj ? 'Change Class Teacher' : 'Assign Class Teacher'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => setSelectedTeacherForPerformance(teacher)}
+                        className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs rounded-xl flex items-center justify-center space-x-1 transition-all shadow-2xs cursor-pointer"
+                      >
+                        <BarChart3 className="w-3.5 h-3.5" />
+                        <span>Performance</span>
+                      </button>
+                    </div>
 
                     <button
-                      onClick={() => setSelectedTeacherForPerformance(teacher)}
-                      className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs rounded-xl flex items-center justify-center space-x-1 transition-all shadow-2xs cursor-pointer"
+                      onClick={() => setSelectedTeacherForLeave(teacher)}
+                      className="w-full py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 transition-all shadow-2xs cursor-pointer"
                     >
-                      <BarChart3 className="w-3.5 h-3.5" />
-                      <span>Performance</span>
+                      <Calendar className="w-3.5 h-3.5 text-amber-700" />
+                      <span>📅 Assign Leave / Substitute (1-2 Days)</span>
                     </button>
                   </div>
                 </div>
@@ -1107,6 +1121,14 @@ export default function PrincipalPortal() {
         <AssignTeacherModal
           teacher={assigningTeacher}
           onClose={() => setAssigningTeacher(null)}
+        />
+      )}
+
+      {/* TEACHER LEAVE & TEMPORARY SUBSTITUTE MODAL */}
+      {selectedTeacherForLeave && (
+        <TeacherLeaveModal
+          teacher={selectedTeacherForLeave}
+          onClose={() => setSelectedTeacherForLeave(null)}
         />
       )}
 

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useAttendance } from '../context/AttendanceContext';
 import { getTodayLocalDateStr } from '../utils/dateUtils';
 import StudentReportModal from './StudentReportModal';
+import { downloadReportCSV, downloadReportPDF } from '../utils/reportExporter';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
-import { BarChart3, TrendingUp, AlertTriangle, CheckCircle2, User, Search, Filter, CalendarRange, ChevronRight, FileText } from 'lucide-react';
+import { BarChart3, TrendingUp, AlertTriangle, CheckCircle2, User, Search, Filter, CalendarRange, ChevronRight, FileText, Download, Printer } from 'lucide-react';
 
 export default function TeacherReports() {
   const { classes, students, submissions, currentUser } = useAttendance();
@@ -301,6 +302,34 @@ export default function TeacherReports() {
             >
               <CalendarRange className="w-3.5 h-3.5" />
               <span>Date Range</span>
+            </button>
+          </div>
+
+          {/* Export & Download Actions */}
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => downloadReportPDF({
+                title: `${currentClassObj.name} Attendance Report (${timeHorizon.toUpperCase()})`,
+                dateRange: timeHorizon === 'custom' ? `${startDate} to ${endDate}` : timeHorizon,
+                records: filteredStudents,
+                userRole: 'Class Teacher'
+              })}
+              className="px-3.5 py-2 bg-emerald-100 text-[#1b4d3e] hover:bg-white text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5 shadow-sm cursor-pointer border border-emerald-300"
+            >
+              <Printer className="w-4 h-4 text-[#1b4d3e]" />
+              <span>Print / Download PDF</span>
+            </button>
+
+            <button
+              onClick={() => downloadReportCSV({
+                title: `${currentClassObj.name}_Attendance_Report`,
+                dateRange: timeHorizon === 'custom' ? `${startDate}_to_${endDate}` : timeHorizon,
+                records: filteredStudents
+              })}
+              className="px-3.5 py-2 bg-[#143c30] text-emerald-100 hover:text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5 border border-emerald-600/40 cursor-pointer shadow-sm"
+            >
+              <Download className="w-4 h-4 text-emerald-300" />
+              <span>Export CSV</span>
             </button>
           </div>
         </div>

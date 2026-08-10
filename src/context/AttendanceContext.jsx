@@ -221,6 +221,34 @@ export function AttendanceProvider({ children }) {
     } catch (e) {}
   }, [classes]);
 
+  // Substitute Assignments state (for teacher 1 or 2 day leaves)
+  const [substituteAssignments, setSubstituteAssignments] = useState(() => {
+    try {
+      const saved = localStorage.getItem('schoolzz_substitute_assignments');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('schoolzz_substitute_assignments', JSON.stringify(substituteAssignments));
+    } catch (e) {}
+  }, [substituteAssignments]);
+
+  const assignSubstituteTeacher = (assignmentData) => {
+    const newAssignment = {
+      id: `sub_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      ...assignmentData
+    };
+    setSubstituteAssignments(prev => [newAssignment, ...prev]);
+  };
+
+  const cancelSubstituteAssignment = (assignmentId) => {
+    setSubstituteAssignments(prev => prev.filter(a => a.id !== assignmentId));
+  };
+
   // Current logged in user (ALWAYS defaults to null on page load so shareable links ALWAYS display the Login Page!)
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -1660,6 +1688,9 @@ export function AttendanceProvider({ children }) {
         submissions,
         dbReports,
         whatsappLogs,
+        substituteAssignments,
+        assignSubstituteTeacher,
+        cancelSubstituteAssignment,
         onboardTeacher,
         createClassAndStudents,
         assignClassTeacher,
