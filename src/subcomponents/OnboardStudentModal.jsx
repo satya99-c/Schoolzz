@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Upload, ShieldCheck, CheckCircle2, DollarSign, School, FileText, PlusCircle, ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { X, UserPlus, Upload, ShieldCheck, CheckCircle2, DollarSign, School, FileText, PlusCircle, ArrowLeft, ArrowRight, Check, AlertTriangle } from 'lucide-react';
 import { useAttendance } from '../context/AttendanceContext';
 
 export default function OnboardStudentModal({ onClose }) {
@@ -16,9 +16,26 @@ export default function OnboardStudentModal({ onClose }) {
   const [parentName, setParentName] = useState('');
   const [parentPhone, setParentPhone] = useState('');
 
-  // STEP 2: Class Selection & New Section Creation
-  const [classMode, setClassMode] = useState('existing'); // 'existing' | 'new_section'
-  const [selectedClassId, setSelectedClassId] = useState(classes[0]?.id || '10-A_morning');
+  // CAPACITY RULE: Filter classes that are NOT FULL (capacity < 15 students)
+  const availableNonFullClasses = classes.filter(c => {
+    const stCount = (students[c.id] || []).length;
+    return stCount < 15;
+  });
+
+  // Class Selection Mode: 'existing' | 'new_section'
+  const [classMode, setClassMode] = useState(availableNonFullClasses.length > 0 ? 'existing' : 'new_section');
+  const [selectedClassId, setSelectedClassId] = useState(availableNonFullClasses[0]?.id || '');
+
+  // Keep selectedClassId synced to first available non-full class or auto-switch to new section if all full
+  useEffect(() => {
+    if (availableNonFullClasses.length > 0) {
+      if (!availableNonFullClasses.some(c => c.id === selectedClassId)) {
+        setSelectedClassId(availableNonFullClasses[0].id);
+      }
+    } else {
+      setClassMode('new_section');
+    }
+  }, [classes, students]);
 
   // New Class Section Fields with Grade Level Lookup
   const gradeOptions = ['Class 10', 'Class 9', 'Class 8', 'Class 7', 'Class 6', 'Class 5'];
@@ -42,7 +59,6 @@ export default function OnboardStudentModal({ onClose }) {
   };
 
   const [selectedSectionLetter, setSelectedSectionLetter] = useState(getSuggestedSection(existingSectionNames));
-  const [newClassShift, setNewClassShift] = useState('Morning Section');
 
   // Update suggested section letter whenever targetGrade changes
   useEffect(() => {
@@ -85,6 +101,10 @@ export default function OnboardStudentModal({ onClose }) {
   };
 
   const handleNextStep2 = () => {
+    if (classMode === 'existing' && !selectedClassId) {
+      showToast('Please select a valid non-full class section.', 'error');
+      return;
+    }
     if (classMode === 'new_section' && !fullNewClassName.trim()) {
       showToast('Please specify the new class section name.', 'error');
       return;
@@ -104,12 +124,20 @@ export default function OnboardStudentModal({ onClose }) {
 
     if (classMode === 'new_section') {
       // Create new class section in context & local storage
-      const createdCls = createClassAndStudents(fullNewClassName, newClassShift);
+      const createdCls = createClassAndStudents(fullNewClassName, 'Morning Section');
       targetClassId = createdCls.id;
       targetClassName = createdCls.name;
     } else {
       const clsObj = classes.find(c => c.id === selectedClassId);
       targetClassName = clsObj?.name || selectedClassId;
+      
+      // Strict Check for 15 student limit
+      const existingStCount = (students[targetClassId] || []).length;
+      if (existingStCount >= 15) {
+        showToast(`Cannot add student. ${targetClassName} is full (15/15 capacity reached). Please create a new section.`, 'error');
+        setClassMode('new_section');
+        return;
+      }
     }
 
     const currentClassList = students[targetClassId] || [];
@@ -357,21 +385,41 @@ export default function OnboardStudentModal({ onClose }) {
 
               {classMode === 'existing' ? (
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Select Target Class Section *</label>
-                  <select
-                    value={selectedClassId}
-                    onChange={(e) => setSelectedClassId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                  >
-                    {classes.map(c => {
-                      const stCount = (students[c.id] || []).length;
-                      return (
-                        <option key={c.id} value={c.id}>
-                          {c.name} ({c.shift}) — Enrolled: {stCount} Students
-                        </option>
-                      );
-                    })}
-                  </select>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Select Target Class Section (Only Classes with Available Seats) *</label>
+                  {availableNonFullClasses.length > 0 ? (
+                    <select
+                      value={selectedClassId}
+                      onChange={(e) => setSelectedClassId(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                    >
+                      {availableNonFullClasses.map(c => {
+                        const stCount = (students[c.id] || []).length;
+                        const availableSeats = 15 - stCount;
+                        return (
+                          <option key={c.id} value={c.id}>
+                            {c.name} — Enrolled: {stCount}/15 Students ({availableSeats} Seats Available)
+                          </option>
+                        );
+                      })}
+                    </select>
+                  ) : (
+                    <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl text-amber-900 text-xs font-bold space-y-2">
+                      <div className="flex items-center space-x-1.5 text-amber-900 text-sm font-black">
+                        <AlertTriangle className="w-4.5 h-4.5 text-amber-700" />
+                        <span>All Existing Class Sections are Full (15/15 Capacity Reached)!</span>
+                      </div>
+                      <p className="text-[11px] text-amber-800 font-normal">
+                        No 16th student can be added to existing classes. Please select <strong>"+ Create New Class Section"</strong> below to create a new section for this student.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setClassMode('new_section')}
+                        className="px-3.5 py-1.5 bg-amber-200 hover:bg-amber-300 text-amber-950 rounded-xl font-bold transition-all shadow-2xs cursor-pointer"
+                      >
+                        + Switch to Create New Section
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl space-y-4">
@@ -404,7 +452,7 @@ export default function OnboardStudentModal({ onClose }) {
                   </div>
 
                   {/* Section Controls */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Select Grade Level *</label>
                       <select
@@ -430,18 +478,6 @@ export default function OnboardStudentModal({ onClose }) {
                         <option value="Section C">Section C (Recommended)</option>
                         <option value="Section D">Section D</option>
                         <option value="Section E">Section E</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Section Shift</label>
-                      <select
-                        value={newClassShift}
-                        onChange={(e) => setNewClassShift(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                      >
-                        <option value="Morning Section">Morning Section (08:30 AM)</option>
-                        <option value="Afternoon Section">Afternoon Section (01:00 PM)</option>
                       </select>
                     </div>
                   </div>
