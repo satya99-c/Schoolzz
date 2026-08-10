@@ -62,16 +62,9 @@ export default function AssignTeacherModal({ teacher, onClose }) {
 
         {/* Body Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl flex items-start space-x-2 text-xs text-emerald-900">
-            <AlertCircle className="w-4 h-4 text-[#1b4d3e] shrink-0 mt-0.5" />
-            <span>
-              <strong>Class Teacher Policy:</strong> Assigning a teacher as Class Teacher allows them to enter and edit Academic Exam Marks & Scorecards for that class section.
-            </span>
-          </div>
-
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Select Class (Available Unassigned Classes Only) *
+              Select Class *
             </label>
             <select
               required
@@ -104,10 +97,10 @@ export default function AssignTeacherModal({ teacher, onClose }) {
             <button
               type="submit"
               disabled={!selectedClassId}
-              className="px-5 py-2 bg-[#1b4d3e] text-white text-xs font-bold rounded-xl hover:bg-[#143a2f] disabled:opacity-50 transition-all cursor-pointer flex items-center space-x-1.5 shadow-md"
+              className="px-4 py-2 bg-[#1b4d3e] text-white text-xs font-bold rounded-xl hover:bg-[#143c30] shadow-md transition-all flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
             >
               <UserCheck className="w-4 h-4" />
-              <span>Confirm Class Teacher Assignment</span>
+              <span>Assign Class Teacher</span>
             </button>
           </div>
         </form>

@@ -7,6 +7,7 @@ import CreateClassModal from '../components/CreateClassModal';
 import StudentReportModal from '../subcomponents/StudentReportModal';
 import AssignTeacherModal from '../subcomponents/AssignTeacherModal';
 import TeacherLeaveModal from '../subcomponents/TeacherLeaveModal';
+import OnboardStudentModal from '../subcomponents/OnboardStudentModal';
 import AcademicScorecardManager from '../subcomponents/AcademicScorecardManager';
 import { Shield, Bell, CheckCircle2, XCircle, MessageSquare, BarChart3, Sun, Moon, AlertTriangle, UserPlus, PlusCircle, Users, School, Award, ArrowLeft, ChevronRight, FileText, Copy, GraduationCap, UserCheck, CreditCard, Clock, Search, Send, Download, Calendar } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -14,6 +15,9 @@ import confetti from 'canvas-confetti';
 export default function PrincipalPortal() {
   const { classes, teachers, students, submissions, approveAttendance, declineAttendance, whatsappLogs, setActiveWhatsAppPreview, leaveApplications = [], approveLeaveApplication, declineLeaveApplication, teacherLeaveRequests = [], approveTeacherLeaveRequest, declineTeacherLeaveRequest, attendanceReminders = [], triggerManualReminder, studentMarks, studentFees = {}, showToast, activeSchool } = useAttendance();
   const [activeTab, setActiveTab] = useState('approvals'); // 'approvals' | 'overview' | 'manage' | 'whatsapp' | 'scorecards' | 'fees'
+
+  // Student Onboarding State
+  const [showOnboardStudentModal, setShowOnboardStudentModal] = useState(false);
 
   // Pending Teacher Leave Applications
   const pendingTeacherLeaveRequests = teacherLeaveRequests.filter(r => r.status === 'PENDING');
@@ -237,14 +241,14 @@ export default function PrincipalPortal() {
       {activeTab === 'approvals' && (
         <div className="space-y-6">
 
-          {/* SECTION 1 (TOP ORDER): FACULTY DAILY ATTENDANCE SUBMISSIONS AWAITING APPROVAL */}
+          {/* SECTION 1 (TOP ORDER): CLASS ATTENDANCE SUBMISSIONS AWAITING APPROVAL */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-extrabold text-slate-900 flex items-center space-x-2">
                 <Bell className="w-5 h-5 text-[#1b4d3e]" />
-                <span>Faculty Attendance Submissions Awaiting Approval</span>
+                <span>Class Attendance Submissions Awaiting Approval</span>
               </h2>
-              <span className="text-xs text-slate-500 font-bold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">{pendingList.length} Pending</span>
+              <span className="text-xs text-slate-700 font-bold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">{pendingList.length} Pending</span>
             </div>
 
             {pendingList.length === 0 ? (
@@ -318,15 +322,15 @@ export default function PrincipalPortal() {
           {/* SECTION 2: SIDE-BY-SIDE LEAVE APPLICATIONS (FACULTY & STUDENT) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
-            {/* LEFT COLUMN: FACULTY TEACHER LEAVE APPLICATIONS */}
+            {/* LEFT COLUMN: FACULTY LEAVE REQUESTS */}
             <div className="bg-white border border-amber-200 rounded-3xl p-6 shadow-md space-y-4 flex flex-col justify-between">
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                   <h2 className="text-sm font-extrabold text-slate-900 flex items-center space-x-2">
                     <Calendar className="w-4.5 h-4.5 text-amber-600" />
-                    <span>Faculty Teacher Leave Applications ({pendingTeacherLeaveRequests.length})</span>
+                    <span>Faculty Leave Requests</span>
                   </h2>
-                  <span className="text-[10px] text-amber-800 font-bold bg-amber-100 px-2.5 py-0.5 rounded-full">Principal Review</span>
+                  <span className="text-xs text-slate-700 font-bold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">{pendingTeacherLeaveRequests.length} Pending</span>
                 </div>
 
                 {pendingTeacherLeaveRequests.length === 0 ? (
@@ -399,15 +403,15 @@ export default function PrincipalPortal() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN: PRE-PLANNED STUDENT LEAVE REQUESTS */}
+            {/* RIGHT COLUMN: STUDENT LEAVE REQUESTS */}
             <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md space-y-4 flex flex-col justify-between">
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                   <h2 className="text-sm font-extrabold text-slate-900 flex items-center space-x-2">
                     <School className="w-4.5 h-4.5 text-[#1b4d3e]" />
-                    <span>Pre-Planned Student Leave Requests ({pendingLeaveApps.length})</span>
+                    <span>Student Leave Requests</span>
                   </h2>
-                  <span className="text-[10px] text-slate-500 font-mono">Requires Approval</span>
+                  <span className="text-xs text-slate-700 font-bold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">{pendingLeaveApps.length} Pending</span>
                 </div>
 
                 {pendingLeaveApps.length === 0 ? (
@@ -486,7 +490,15 @@ export default function PrincipalPortal() {
               </p>
             </div>
 
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setShowOnboardStudentModal(true)}
+                className="px-4 py-2 rounded-xl bg-amber-400 text-slate-950 border border-amber-300 hover:bg-amber-300 text-xs font-black transition-all flex items-center space-x-1.5 shadow-md cursor-pointer"
+              >
+                <GraduationCap className="w-4 h-4 text-slate-950" />
+                <span>🎓 Onboard / Register New Student</span>
+              </button>
+
               <button
                 onClick={() => setShowOnboardModal(true)}
                 className="px-4 py-2 rounded-xl bg-[#1b4d3e] text-white hover:bg-[#143c30] text-xs font-bold transition-all flex items-center space-x-1.5 shadow-md cursor-pointer"
@@ -548,37 +560,37 @@ export default function PrincipalPortal() {
                       )}
                     </div>
 
-                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2 text-xs">
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3.5 text-xs">
                       <div>
-                        <div className="text-[10px] text-slate-500 font-bold uppercase">Attendance Classes (Max 2):</div>
+                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Attendance Classes (Max 2):</div>
                         {teacher.assignedClasses && teacher.assignedClasses.length > 0 ? (
-                          <div className="flex flex-wrap gap-1 pt-1">
+                          <div className="flex flex-wrap gap-1.5 pt-1.5 pb-0.5">
                             {teacher.assignedClasses.map(cId => {
                               const cObj = classes.find(c => c.id === cId);
                               return (
-                                <span key={cId} className="bg-slate-200 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                                <span key={cId} className="bg-slate-200 text-slate-800 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-slate-300/60 shadow-2xs">
                                   {cObj ? `${cObj.name} (${cObj.shift})` : cId}
                                 </span>
                               );
                             })}
                           </div>
                         ) : (
-                          <div className="text-[11px] text-slate-400 italic">No attendance classes assigned</div>
+                          <div className="text-[11px] text-slate-400 italic pt-1">No attendance classes assigned</div>
                         )}
                       </div>
 
-                      <div className="border-t border-slate-200 pt-1.5">
-                        <div className="text-[10px] text-emerald-800 font-bold uppercase flex items-center space-x-1">
+                      <div className="border-t border-slate-200 pt-3 space-y-1">
+                        <div className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider flex items-center space-x-1">
                           <span>⭐ Class Teacher (Exam Scorecards):</span>
                         </div>
                         {classTeacherObj ? (
-                          <div className="mt-1">
-                            <span className="bg-[#1b4d3e] text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg inline-block shadow-2xs">
+                          <div className="pt-1">
+                            <span className="bg-[#1b4d3e] text-white text-[10px] font-extrabold px-3 py-1 rounded-lg inline-block shadow-2xs">
                               {classTeacherObj.name}
                             </span>
                           </div>
                         ) : (
-                          <div className="text-[11px] text-amber-700 italic font-semibold mt-0.5">
+                          <div className="text-[11px] text-amber-700 italic font-semibold pt-1">
                             No Class Teacher assigned — Click below to assign
                           </div>
                         )}
@@ -1221,6 +1233,13 @@ export default function PrincipalPortal() {
         <TeacherLeaveModal
           teacher={selectedTeacherForLeave}
           onClose={() => setSelectedTeacherForLeave(null)}
+        />
+      )}
+
+      {/* ONBOARD / REGISTER NEW STUDENT MODAL */}
+      {showOnboardStudentModal && (
+        <OnboardStudentModal
+          onClose={() => setShowOnboardStudentModal(false)}
         />
       )}
 

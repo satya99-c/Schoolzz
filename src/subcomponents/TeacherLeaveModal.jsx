@@ -5,15 +5,9 @@ import { useAttendance } from '../context/AttendanceContext';
 export default function TeacherLeaveModal({ teacher, onClose }) {
   const { classes, teachers, substituteAssignments = [], assignSubstituteTeacher, cancelSubstituteAssignment, showToast } = useAttendance();
 
-  // RULE 1: Filter ONLY classes assigned to THIS respective teacher (e.g. Mr. Sharma)
+  // RULE 1: Filter ONLY attendance classes assigned to THIS respective teacher (e.g. Mr. Sharma)
   const teacherAssignedIds = teacher.assignedClasses || [];
-  const teacherClasses = classes.filter(c => 
-    teacherAssignedIds.includes(c.id) ||
-    c.classTeacher === teacher.name || 
-    c.teacherId === teacher.id ||
-    c.teacherId === teacher.username ||
-    (teacher.classTeacherClassId && c.id === teacher.classTeacherClassId)
-  );
+  const teacherClasses = classes.filter(c => teacherAssignedIds.includes(c.id));
 
   // Deduplicate by class ID
   const uniqueTeacherClasses = Array.from(new Set(teacherClasses.map(c => c.id)))
@@ -209,18 +203,10 @@ export default function TeacherLeaveModal({ teacher, onClose }) {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            
-            <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-2xl flex items-start space-x-2.5 text-xs text-emerald-900">
-              <AlertCircle className="w-4.5 h-4.5 text-[#1b4d3e] shrink-0 mt-0.5" />
-              <span>
-                <strong>Substitute Rules:</strong> Only classes assigned to <strong>{teacher.name}</strong> are listed below. Substitute faculty must be free in the target section shift ({targetShiftType}) and have fewer than 2 classes assigned.
-              </span>
-            </div>
-
-            {/* 1. Class Section Selection (Only assigned classes for respective teacher) */}
+            {/* 1. Class Section Selection (Only assigned attendance classes for respective teacher) */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                1. Select Class Section to Cover (Assigned to {teacher.name}) *
+                1. Select Class Section to Cover *
               </label>
               {uniqueTeacherClasses.length > 0 ? (
                 <select
