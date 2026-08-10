@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { X, UserPlus, Upload, ShieldCheck, CheckCircle2, DollarSign, School, FileText, PlusCircle, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, UserPlus, Upload, ShieldCheck, CheckCircle2, DollarSign, School, FileText, PlusCircle, ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useAttendance } from '../context/AttendanceContext';
 
 export default function OnboardStudentModal({ onClose }) {
   const { classes, students, createClassAndStudents, showToast } = useAttendance();
 
-  // Student Basic Info
+  // Wizard Stepper State: 1 | 2 | 3 | 4
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // STEP 1: Student Personal Details
   const [studentName, setStudentName] = useState('');
   const [rollNo, setRollNo] = useState('');
   const [gender, setGender] = useState('Male');
@@ -13,25 +16,54 @@ export default function OnboardStudentModal({ onClose }) {
   const [parentName, setParentName] = useState('');
   const [parentPhone, setParentPhone] = useState('');
 
-  // Class Selection Mode: 'existing' | 'new_section'
-  const [classMode, setClassMode] = useState('existing');
+  // STEP 2: Class Selection & New Section Creation
+  const [classMode, setClassMode] = useState('existing'); // 'existing' | 'new_section'
   const [selectedClassId, setSelectedClassId] = useState(classes[0]?.id || '10-A_morning');
 
-  // New Class Section Fields (if creating new section)
-  const [newClassName, setNewClassName] = useState('');
+  // New Class Section Fields with Grade Level Lookup
+  const gradeOptions = ['Class 10', 'Class 9', 'Class 8', 'Class 7', 'Class 6', 'Class 5'];
+  const [targetGrade, setTargetGrade] = useState('Class 9');
+
+  // Find existing section names for selected grade (e.g. ['Class 9 - Section A', 'Class 9 - Section B'])
+  const existingGradeClasses = classes.filter(c => 
+    c.name.toLowerCase().includes(targetGrade.toLowerCase())
+  );
+  const existingSectionNames = existingGradeClasses.map(c => c.name);
+
+  // Auto-suggest next section letter (e.g. if A and B exist, suggest Section C)
+  const getSuggestedSection = (existingList) => {
+    const letters = ['Section A', 'Section B', 'Section C', 'Section D', 'Section E'];
+    for (let l of letters) {
+      if (!existingList.some(name => name.toUpperCase().includes(l.toUpperCase()))) {
+        return l;
+      }
+    }
+    return `Section ${existingList.length + 1}`;
+  };
+
+  const [selectedSectionLetter, setSelectedSectionLetter] = useState(getSuggestedSection(existingSectionNames));
   const [newClassShift, setNewClassShift] = useState('Morning Section');
 
-  // Financial & Fee Structure
+  // Update suggested section letter whenever targetGrade changes
+  useEffect(() => {
+    const currentExisting = classes
+      .filter(c => c.name.toLowerCase().includes(targetGrade.toLowerCase()))
+      .map(c => c.name);
+    setSelectedSectionLetter(getSuggestedSection(currentExisting));
+  }, [targetGrade, classes]);
+
+  const fullNewClassName = `${targetGrade} - ${selectedSectionLetter}`;
+
+  // STEP 3: Financial & Fee Structure
   const [totalFee, setTotalFee] = useState(45000);
   const [discountAmount, setDiscountAmount] = useState(5000);
   const [paymentStatus, setPaymentStatus] = useState('pending'); // 'pending' | 'paid'
 
-  // Documents
+  const netFee = Math.max(0, Number(totalFee) - Number(discountAmount));
+
+  // STEP 4: Documents
   const [photoName, setPhotoName] = useState('');
   const [tcName, setTcName] = useState('');
-
-  // Computed net fee
-  const netFee = Math.max(0, Number(totalFee) - Number(discountAmount));
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
@@ -43,24 +75,36 @@ export default function OnboardStudentModal({ onClose }) {
     if (file) setTcName(file.name);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
+  // Step Navigation Handlers
+  const handleNextStep1 = () => {
     if (!studentName.trim()) {
       showToast('Please enter the student full name.', 'error');
       return;
     }
+    setCurrentStep(2);
+  };
+
+  const handleNextStep2 = () => {
+    if (classMode === 'new_section' && !fullNewClassName.trim()) {
+      showToast('Please specify the new class section name.', 'error');
+      return;
+    }
+    setCurrentStep(3);
+  };
+
+  const handleNextStep3 = () => {
+    setCurrentStep(4);
+  };
+
+  const handleSubmitFinal = (e) => {
+    e.preventDefault();
 
     let targetClassId = selectedClassId;
     let targetClassName = '';
 
     if (classMode === 'new_section') {
-      if (!newClassName.trim()) {
-        showToast('Please enter a name for the new class section.', 'error');
-        return;
-      }
-      // Create new class section
-      const createdCls = createClassAndStudents(newClassName, newClassShift);
+      // Create new class section in context & local storage
+      const createdCls = createClassAndStudents(fullNewClassName, newClassShift);
       targetClassId = createdCls.id;
       targetClassName = createdCls.name;
     } else {
@@ -68,7 +112,6 @@ export default function OnboardStudentModal({ onClose }) {
       targetClassName = clsObj?.name || selectedClassId;
     }
 
-    // Auto-assign roll number if empty
     const currentClassList = students[targetClassId] || [];
     const finalRollNo = Number(rollNo) || (currentClassList.length + 1);
 
@@ -91,7 +134,6 @@ export default function OnboardStudentModal({ onClose }) {
       }
     };
 
-    // Add student to context state (or mutate local storage)
     currentClassList.push(newStudentObj);
     try {
       const savedStudents = JSON.parse(localStorage.getItem('schoolzz_students') || '{}');
@@ -130,271 +172,445 @@ export default function OnboardStudentModal({ onClose }) {
           </button>
         </div>
 
-        {/* Body Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+        <div className="p-6 max-h-[80vh] overflow-y-auto">
           
-          {/* SECTION 1: PERSONAL DETAILS */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 border-b border-slate-200 pb-2">
-              <UserPlus className="w-4 h-4 text-[#1b4d3e]" />
-              <span>1. Personal & Guardian Details</span>
-            </h4>
+          {/* STEPPER PROGRESS BAR (Pass-Through Wizard) */}
+          <div className="grid grid-cols-4 gap-1 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 text-[11px] font-bold mb-6">
+            <div
+              onClick={() => setCurrentStep(1)}
+              className={`flex items-center justify-center space-x-1 py-2 px-1 rounded-xl transition-all cursor-pointer ${
+                currentStep === 1
+                  ? 'bg-[#1b4d3e] text-white shadow-xs font-black'
+                  : currentStep > 1
+                  ? 'bg-emerald-100 text-[#1b4d3e]'
+                  : 'text-slate-500'
+              }`}
+            >
+              <span>1. Details</span>
+              {currentStep > 1 && <Check className="w-3 h-3 text-emerald-700" />}
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Student Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={studentName}
-                  onChange={(e) => setStudentName(e.target.value)}
-                  placeholder="e.g. Aarav Verma"
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                />
-              </div>
+            <div
+              onClick={() => currentStep > 1 && setCurrentStep(2)}
+              className={`flex items-center justify-center space-x-1 py-2 px-1 rounded-xl transition-all cursor-pointer ${
+                currentStep === 2
+                  ? 'bg-[#1b4d3e] text-white shadow-xs font-black'
+                  : currentStep > 2
+                  ? 'bg-emerald-100 text-[#1b4d3e]'
+                  : 'text-slate-400'
+              }`}
+            >
+              <span>2. Class</span>
+              {currentStep > 2 && <Check className="w-3 h-3 text-emerald-700" />}
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Roll Number</label>
-                <input
-                  type="number"
-                  value={rollNo}
-                  onChange={(e) => setRollNo(e.target.value)}
-                  placeholder="Auto-assigned if empty"
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                />
-              </div>
+            <div
+              onClick={() => currentStep > 2 && setCurrentStep(3)}
+              className={`flex items-center justify-center space-x-1 py-2 px-1 rounded-xl transition-all cursor-pointer ${
+                currentStep === 3
+                  ? 'bg-[#1b4d3e] text-white shadow-xs font-black'
+                  : currentStep > 3
+                  ? 'bg-emerald-100 text-[#1b4d3e]'
+                  : 'text-slate-400'
+              }`}
+            >
+              <span>3. Fee</span>
+              {currentStep > 3 && <Check className="w-3 h-3 text-emerald-700" />}
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Gender</label>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                >
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Date of Birth</label>
-                <input
-                  type="date"
-                  value={dob}
-                  onChange={(e) => setDob(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Parent / Guardian Name</label>
-                <input
-                  type="text"
-                  value={parentName}
-                  onChange={(e) => setParentName(e.target.value)}
-                  placeholder="e.g. Ramesh Verma"
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Parent Contact Mobile</label>
-                <input
-                  type="text"
-                  value={parentPhone}
-                  onChange={(e) => setParentPhone(e.target.value)}
-                  placeholder="+91 98765 43210"
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                />
-              </div>
+            <div
+              onClick={() => currentStep > 3 && setCurrentStep(4)}
+              className={`flex items-center justify-center space-x-1 py-2 px-1 rounded-xl transition-all cursor-pointer ${
+                currentStep === 4
+                  ? 'bg-[#1b4d3e] text-white shadow-xs font-black'
+                  : 'text-slate-400'
+              }`}
+            >
+              <span>4. Documents</span>
             </div>
           </div>
 
-          {/* SECTION 2: CLASS SECTION ASSIGNMENT */}
-          <div className="space-y-3 pt-2">
-            <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 border-b border-slate-200 pb-2">
-              <School className="w-4 h-4 text-[#1b4d3e]" />
-              <span>2. Class Section Assignment</span>
-            </h4>
+          {/* STEP 1: PERSONAL & GUARDIAN DETAILS */}
+          {currentStep === 1 && (
+            <div className="space-y-4 animate-fade-in">
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 border-b border-slate-200 pb-2">
+                <UserPlus className="w-4 h-4 text-[#1b4d3e]" />
+                <span>1. Personal & Guardian Details</span>
+              </h4>
 
-            <div className="flex items-center space-x-3 text-xs">
-              <label className="flex items-center space-x-1.5 cursor-pointer font-bold text-slate-800">
-                <input
-                  type="radio"
-                  name="classMode"
-                  value="existing"
-                  checked={classMode === 'existing'}
-                  onChange={() => setClassMode('existing')}
-                  className="accent-[#1b4d3e]"
-                />
-                <span>Assign to Existing Class</span>
-              </label>
-
-              <label className="flex items-center space-x-1.5 cursor-pointer font-bold text-emerald-800">
-                <input
-                  type="radio"
-                  name="classMode"
-                  value="new_section"
-                  checked={classMode === 'new_section'}
-                  onChange={() => setClassMode('new_section')}
-                  className="accent-[#1b4d3e]"
-                />
-                <span>+ Create New Class Section (If all full)</span>
-              </label>
-            </div>
-
-            {classMode === 'existing' ? (
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Select Target Class Section *</label>
-                <select
-                  value={selectedClassId}
-                  onChange={(e) => setSelectedClassId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                >
-                  {classes.map(c => {
-                    const stCount = (students[c.id] || []).length;
-                    return (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({c.shift}) — Enrolled: {stCount} Students
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-            ) : (
-              <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl space-y-3">
-                <div className="text-xs font-bold text-emerald-900 flex items-center space-x-1">
-                  <PlusCircle className="w-4 h-4 text-emerald-700" />
-                  <span>Create New Class Section & Assign Student</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Student Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={studentName}
+                    onChange={(e) => setStudentName(e.target.value)}
+                    placeholder="e.g. Aarav Verma"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                  />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Class Section Name *</label>
-                    <input
-                      type="text"
-                      required={classMode === 'new_section'}
-                      value={newClassName}
-                      onChange={(e) => setNewClassName(e.target.value)}
-                      placeholder="e.g. Class 11 - Section A"
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Section Shift</label>
-                    <select
-                      value={newClassShift}
-                      onChange={(e) => setNewClassShift(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                    >
-                      <option value="Morning Section">Morning Section (08:30 AM)</option>
-                      <option value="Afternoon Section">Afternoon Section (01:00 PM)</option>
-                    </select>
-                  </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Roll Number</label>
+                  <input
+                    type="number"
+                    value={rollNo}
+                    onChange={(e) => setRollNo(e.target.value)}
+                    placeholder="Auto-assigned if empty"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Gender</label>
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                  >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Date of Birth</label>
+                  <input
+                    type="date"
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Parent / Guardian Name</label>
+                  <input
+                    type="text"
+                    value={parentName}
+                    onChange={(e) => setParentName(e.target.value)}
+                    placeholder="e.g. Ramesh Verma"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Parent Contact Mobile</label>
+                  <input
+                    type="text"
+                    value={parentPhone}
+                    onChange={(e) => setParentPhone(e.target.value)}
+                    placeholder="+91 98765 43210"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                  />
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* SECTION 3: FEE STRUCTURE & CONCESSION DISCOUNT */}
-          <div className="space-y-3 pt-2">
-            <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 border-b border-slate-200 pb-2">
-              <DollarSign className="w-4 h-4 text-[#1b4d3e]" />
-              <span>3. Fee Structure & Discount Concession</span>
-            </h4>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Total Fee Amount (₹)</label>
-                <input
-                  type="number"
-                  value={totalFee}
-                  onChange={(e) => setTotalFee(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Scholarship / Discount (₹)</label>
-                <input
-                  type="number"
-                  value={discountAmount}
-                  onChange={(e) => setDiscountAmount(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-emerald-800 focus:outline-none focus:border-[#1b4d3e]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Initial Payment Status</label>
-                <select
-                  value={paymentStatus}
-                  onChange={(e) => setPaymentStatus(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+              <div className="pt-4 border-t border-slate-200 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleNextStep1}
+                  className="px-5 py-2.5 bg-[#1b4d3e] hover:bg-[#143c30] text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer flex items-center space-x-1.5"
                 >
-                  <option value="pending">Due / Pending</option>
-                  <option value="paid">Paid (Fully Cleared)</option>
-                </select>
+                  <span>Next: Class Section Assignment</span>
+                  <ArrowRight className="w-4 h-4 text-emerald-200" />
+                </button>
               </div>
             </div>
+          )}
 
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs font-extrabold text-emerald-900">
-              <span>Net Fee Payable Amount:</span>
-              <span className="text-sm text-[#1b4d3e] font-black">₹{netFee.toLocaleString('en-IN')}</span>
-            </div>
-          </div>
+          {/* STEP 2: CLASS SECTION ASSIGNMENT */}
+          {currentStep === 2 && (
+            <div className="space-y-4 animate-fade-in">
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 border-b border-slate-200 pb-2">
+                <School className="w-4 h-4 text-[#1b4d3e]" />
+                <span>2. Class Section Assignment</span>
+              </h4>
 
-          {/* SECTION 4: DOCUMENT UPLOADS */}
-          <div className="space-y-3 pt-2">
-            <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 border-b border-slate-200 pb-2">
-              <FileText className="w-4 h-4 text-[#1b4d3e]" />
-              <span>4. Document Uploads</span>
-            </h4>
+              <div className="flex items-center space-x-4 text-xs bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                <label className="flex items-center space-x-1.5 cursor-pointer font-bold text-slate-800">
+                  <input
+                    type="radio"
+                    name="classMode"
+                    value="existing"
+                    checked={classMode === 'existing'}
+                    onChange={() => setClassMode('existing')}
+                    className="accent-[#1b4d3e]"
+                  />
+                  <span>Assign to Existing Class</span>
+                </label>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3 border border-dashed border-slate-300 rounded-xl bg-slate-50 space-y-1">
-                <span className="font-bold text-slate-700 block">Student Photo / Identity Proof</span>
-                <input
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={handlePhotoUpload}
-                  className="text-[11px] text-slate-500 cursor-pointer"
-                />
-                {photoName && <p className="text-[10px] text-emerald-700 font-bold">✓ Uploaded: {photoName}</p>}
+                <label className="flex items-center space-x-1.5 cursor-pointer font-bold text-emerald-800">
+                  <input
+                    type="radio"
+                    name="classMode"
+                    value="new_section"
+                    checked={classMode === 'new_section'}
+                    onChange={() => setClassMode('new_section')}
+                    className="accent-[#1b4d3e]"
+                  />
+                  <span>+ Create New Class Section</span>
+                </label>
               </div>
 
-              <div className="p-3 border border-dashed border-slate-300 rounded-xl bg-slate-50 space-y-1">
-                <span className="font-bold text-slate-700 block">Birth / Transfer Certificate (TC)</span>
-                <input
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={handleTcUpload}
-                  className="text-[11px] text-slate-500 cursor-pointer"
-                />
-                {tcName && <p className="text-[10px] text-emerald-700 font-bold">✓ Uploaded: {tcName}</p>}
+              {classMode === 'existing' ? (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Select Target Class Section *</label>
+                  <select
+                    value={selectedClassId}
+                    onChange={(e) => setSelectedClassId(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                  >
+                    {classes.map(c => {
+                      const stCount = (students[c.id] || []).length;
+                      return (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.shift}) — Enrolled: {stCount} Students
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              ) : (
+                <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-emerald-900 flex items-center space-x-1">
+                      <PlusCircle className="w-4 h-4 text-emerald-700" />
+                      <span>Create New Section & Assign Student</span>
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-200/80 px-2 py-0.5 rounded-md">
+                      Smart Section Auto-Lookup
+                    </span>
+                  </div>
+
+                  {/* Existing Sections Lookup Badge Bar */}
+                  <div className="bg-white p-3 rounded-xl border border-emerald-200 text-xs space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase text-slate-500 block">
+                      Sections already available in {targetGrade}:
+                    </span>
+                    {existingSectionNames.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {existingSectionNames.map(name => (
+                          <span key={name} className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[11px] font-bold px-2.5 py-0.5 rounded-lg shadow-2xs">
+                            ✓ {name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 italic text-[11px]">No sections currently exist for {targetGrade}.</span>
+                    )}
+                  </div>
+
+                  {/* Section Controls */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Select Grade Level *</label>
+                      <select
+                        value={targetGrade}
+                        onChange={(e) => setTargetGrade(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                      >
+                        {gradeOptions.map(g => (
+                          <option key={g} value={g}>{g}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">New Section Letter *</label>
+                      <select
+                        value={selectedSectionLetter}
+                        onChange={(e) => setSelectedSectionLetter(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                      >
+                        <option value="Section A">Section A</option>
+                        <option value="Section B">Section B</option>
+                        <option value="Section C">Section C (Recommended)</option>
+                        <option value="Section D">Section D</option>
+                        <option value="Section E">Section E</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Section Shift</label>
+                      <select
+                        value={newClassShift}
+                        onChange={(e) => setNewClassShift(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                      >
+                        <option value="Morning Section">Morning Section (08:30 AM)</option>
+                        <option value="Afternoon Section">Afternoon Section (01:00 PM)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-white border border-emerald-300 rounded-xl flex items-center justify-between text-xs font-bold text-emerald-900">
+                    <span>Resulting New Section Name:</span>
+                    <span className="text-sm font-black text-[#1b4d3e] bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-300">
+                      {fullNewClassName}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(1)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center space-x-1"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleNextStep2}
+                  className="px-5 py-2.5 bg-[#1b4d3e] hover:bg-[#143c30] text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer flex items-center space-x-1.5"
+                >
+                  <span>Next: Fee Structure</span>
+                  <ArrowRight className="w-4 h-4 text-emerald-200" />
+                </button>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Buttons */}
-          <div className="pt-3 border-t border-slate-200 flex items-center justify-end space-x-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
-            >
-              Cancel
-            </button>
+          {/* STEP 3: FEE STRUCTURE & DISCOUNT CONCESSION */}
+          {currentStep === 3 && (
+            <div className="space-y-4 animate-fade-in">
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 border-b border-slate-200 pb-2">
+                <DollarSign className="w-4 h-4 text-[#1b4d3e]" />
+                <span>3. Fee Structure & Discount Concession</span>
+              </h4>
 
-            <button
-              type="submit"
-              className="px-5 py-2.5 bg-[#1b4d3e] hover:bg-[#143c30] text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer flex items-center space-x-1.5"
-            >
-              <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-              <span>Submit & Onboard Student</span>
-            </button>
-          </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Total Fee Amount (₹)</label>
+                  <input
+                    type="number"
+                    value={totalFee}
+                    onChange={(e) => setTotalFee(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                  />
+                </div>
 
-        </form>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Scholarship / Discount (₹)</label>
+                  <input
+                    type="number"
+                    value={discountAmount}
+                    onChange={(e) => setDiscountAmount(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-emerald-800 focus:outline-none focus:border-[#1b4d3e]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Initial Payment Status</label>
+                  <select
+                    value={paymentStatus}
+                    onChange={(e) => setPaymentStatus(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                  >
+                    <option value="pending">Due / Pending</option>
+                    <option value="paid">Paid (Fully Cleared)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs font-extrabold text-emerald-900 shadow-2xs">
+                <span>Net Fee Payable Amount:</span>
+                <span className="text-base text-[#1b4d3e] font-black">₹{netFee.toLocaleString('en-IN')}</span>
+              </div>
+
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(2)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center space-x-1"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleNextStep3}
+                  className="px-5 py-2.5 bg-[#1b4d3e] hover:bg-[#143c30] text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer flex items-center space-x-1.5"
+                >
+                  <span>Next: Document Uploads</span>
+                  <ArrowRight className="w-4 h-4 text-emerald-200" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4: DOCUMENT UPLOADS & FINAL SUBMISSION */}
+          {currentStep === 4 && (
+            <form onSubmit={handleSubmitFinal} className="space-y-4 animate-fade-in">
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 border-b border-slate-200 pb-2">
+                <FileText className="w-4 h-4 text-[#1b4d3e]" />
+                <span>4. Document Uploads</span>
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+                <div className="p-4 border border-dashed border-slate-300 rounded-2xl bg-slate-50 space-y-2">
+                  <span className="font-bold text-slate-700 block">Student Photo / Identity Proof</span>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={handlePhotoUpload}
+                    className="text-[11px] text-slate-500 cursor-pointer"
+                  />
+                  {photoName && <p className="text-[10px] text-emerald-700 font-bold">✓ Uploaded: {photoName}</p>}
+                </div>
+
+                <div className="p-4 border border-dashed border-slate-300 rounded-2xl bg-slate-50 space-y-2">
+                  <span className="font-bold text-slate-700 block">Birth / Transfer Certificate (TC)</span>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={handleTcUpload}
+                    className="text-[11px] text-slate-500 cursor-pointer"
+                  />
+                  {tcName && <p className="text-[10px] text-emerald-700 font-bold">✓ Uploaded: {tcName}</p>}
+                </div>
+              </div>
+
+              {/* Summary Overview Before Submission */}
+              <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-xs space-y-1.5">
+                <span className="font-bold text-slate-800 block border-b border-slate-200 pb-1">Enrollment Overview:</span>
+                <div className="grid grid-cols-2 gap-2 text-slate-600">
+                  <div>Student: <strong className="text-slate-900">{studentName}</strong></div>
+                  <div>Class: <strong className="text-[#1b4d3e]">{classMode === 'new_section' ? fullNewClassName : classes.find(c => c.id === selectedClassId)?.name}</strong></div>
+                  <div>Parent: <strong className="text-slate-900">{parentName || 'Guardian'}</strong></div>
+                  <div>Net Fee: <strong className="text-emerald-700">₹{netFee.toLocaleString('en-IN')}</strong></div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(3)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center space-x-1"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back</span>
+                </button>
+
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-[#1b4d3e] hover:bg-[#143c30] text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer flex items-center space-x-1.5"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                  <span>🎓 Complete Student Onboarding</span>
+                </button>
+              </div>
+            </form>
+          )}
+
+        </div>
 
       </div>
     </div>
