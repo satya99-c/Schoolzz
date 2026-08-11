@@ -137,9 +137,11 @@ export const INITIAL_STUDENTS = {
 
 export const MOCK_USERS = [
   {
-    id: "user-teacher-1",
-    username: "teacher1",
-    password: "teacher1",
+    id: "T001",
+    teacherId: "T001",
+    username: "T001",
+    aliasUsername: "teacher1",
+    password: "T001",
     name: "Mr. Sharma (Teacher 1)",
     role: "teacher",
     avatar: "👨‍🏫",
@@ -147,9 +149,11 @@ export const MOCK_USERS = [
     classTeacherClassId: "10-A_morning"
   },
   {
-    id: "user-teacher-2",
-    username: "teacher2",
-    password: "teacher2",
+    id: "T002",
+    teacherId: "T002",
+    username: "T002",
+    aliasUsername: "teacher2",
+    password: "T002",
     name: "Mrs. Kapoor (Teacher 2)",
     role: "teacher",
     avatar: "👩‍🏫",
@@ -157,9 +161,11 @@ export const MOCK_USERS = [
     classTeacherClassId: "9-A_morning"
   },
   {
-    id: "user-teacher-3",
-    username: "teacher3",
-    password: "teacher3",
+    id: "T003",
+    teacherId: "T003",
+    username: "T003",
+    aliasUsername: "teacher3",
+    password: "T003",
     name: "Ms. Ananya (Teacher 3)",
     role: "teacher",
     avatar: "👩‍🏫",
@@ -167,32 +173,27 @@ export const MOCK_USERS = [
     classTeacherClassId: "10-B_afternoon"
   },
   {
-    id: "user-teacher-default",
-    username: "teacher",
-    password: "teacher",
-    name: "Mr. Sharma (Teacher 1)",
-    role: "teacher",
-    avatar: "👨‍🏫",
-    assignedClasses: ["10-A_morning", "10-B_afternoon"],
-    classTeacherClassId: "10-A_morning"
-  },
-  {
-    id: "user-principal",
-    username: "principal",
-    password: "principal",
+    id: "P001",
+    principalId: "P001",
+    username: "P001",
+    aliasUsername: "principal",
+    password: "P001",
     name: "Dr. V. K. Rao",
     role: "principal",
     avatar: "🎓",
     title: "School Principal"
   },
   {
-    id: "user-student",
-    username: "student",
-    password: "student",
+    id: "S001",
+    studentId: "S001",
+    username: "S001",
+    aliasUsername: "student",
+    password: "S001",
     name: "Isha Kapoor",
     rollNo: 1,
     classId: "10-A_morning",
     role: "student",
-    avatar: "👧"
+    avatar: "👧",
+    isFirstLogin: true
   }
 ];

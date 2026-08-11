@@ -3,10 +3,38 @@ import { useAttendance } from '../context/AttendanceContext';
 import { getTodayLocalDateStr, getTomorrowLocalDateStr } from '../utils/dateUtils';
 import StudentReportModal from '../subcomponents/StudentReportModal';
 import StudentFeePaymentModal from '../subcomponents/StudentFeePaymentModal';
-import { GraduationCap, CalendarCheck, Clock, ShieldAlert, CheckCircle2, XCircle, FileText, Calendar, Award, BookOpen, CreditCard, ShieldCheck, Download, ArrowRight } from 'lucide-react';
+import { GraduationCap, CalendarCheck, Clock, ShieldAlert, CheckCircle2, XCircle, FileText, Calendar, Award, BookOpen, CreditCard, ShieldCheck, Download, ArrowRight, KeyRound, Check } from 'lucide-react';
 
 export default function StudentPortal() {
-  const { currentUser, students, leaveApplications = [], submitLeaveApplication, studentMarks, studentFees = {}, payStudentFee } = useAttendance();
+  const { currentUser, students, leaveApplications = [], submitLeaveApplication, studentMarks, studentFees = {}, payStudentFee, updateUserPassword, showToast } = useAttendance();
+
+  // First-Time Login Password Reset State
+  const isDefaultPassword = currentUser?.password === currentUser?.username || currentUser?.passcode === currentUser?.studentId;
+  const isFirstLogin = currentUser?.isFirstLogin || (isDefaultPassword && Boolean(currentUser?.studentId));
+
+  const [showFirstLoginModal, setShowFirstLoginModal] = useState(isFirstLogin);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handlePasswordResetSubmit = (e) => {
+    e.preventDefault();
+    if (!newPassword.trim()) {
+      showToast('Please enter a valid password.', 'error');
+      return;
+    }
+    if (newPassword.length < 4) {
+      showToast('Password must be at least 4 characters long.', 'error');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showToast('Passwords do not match! Please verify both fields.', 'error');
+      return;
+    }
+
+    const usernameOrId = currentUser?.studentId || currentUser?.username || `S${String(currentUser?.rollNo || 1).padStart(3, '0')}`;
+    updateUserPassword(usernameOrId, newPassword);
+    setShowFirstLoginModal(false);
+  };
 
   const studentClassId = currentUser?.classId || '10-A_morning';
   const classStudents = students[studentClassId] || [];
@@ -488,6 +516,65 @@ export default function StudentPortal() {
           hideWhatsApp={true}
           onClose={() => setShowReportCard(false)}
         />
+      )}
+
+      {/* FIRST-TIME LOGIN PASSWORD RESET MODAL FOR STUDENTS */}
+      {showFirstLoginModal && (
+        <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5 animate-scale-up">
+            
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center mx-auto border border-amber-300 shadow-sm">
+              <KeyRound className="w-7 h-7 text-amber-700" />
+            </div>
+
+            <div className="text-center space-y-1.5">
+              <span className="bg-amber-100 text-amber-950 border border-amber-300 text-[10px] font-black px-3 py-0.5 rounded-full uppercase">
+                First-Time Security Setup
+              </span>
+              <h3 className="text-xl font-black text-slate-900">Create Your Custom Password</h3>
+              <p className="text-xs text-slate-600 font-medium">
+                Welcome, <strong className="text-[#1b4d3e]">{currentStudent.name}</strong>! You logged in with default credentials (Student ID: <strong className="font-mono">{currentUser?.studentId || currentUser?.username}</strong>). Please set a new password to secure your account.
+              </p>
+            </div>
+
+            <form onSubmit={handlePasswordResetSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">New Password *</label>
+                <input
+                  type="password"
+                  required
+                  minLength={4}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min 4 chars)"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono font-bold focus:outline-none focus:border-[#1b4d3e]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Confirm New Password *</label>
+                <input
+                  type="password"
+                  required
+                  minLength={4}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono font-bold focus:outline-none focus:border-[#1b4d3e]"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-[#1b4d3e] hover:bg-[#143c30] text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                <span>Save New Password & Access Student Portal</span>
+              </button>
+            </form>
+
+          </div>
+        </div>
       )}
 
     </div>

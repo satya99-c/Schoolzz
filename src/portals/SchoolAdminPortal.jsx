@@ -5,7 +5,7 @@ import OnboardStudentModal from '../subcomponents/OnboardStudentModal';
 import { Building2, Shield, UserPlus, Copy, CheckCircle, School, Users, BookOpen, KeyRound, Mail, Sparkles, User, GraduationCap, ChevronDown, ShieldCheck, PlusCircle } from 'lucide-react';
 
 export default function SchoolAdminPortal() {
-  const { activeSchool, teachers, classes, students, showToast } = useAttendance();
+  const { activeSchool, teachers, classes, students, getNextSequentialId, showToast } = useAttendance();
 
   // Selection Dropdown: 'student' | 'teacher' | 'principal'
   const [whomToOnboard, setWhomToOnboard] = useState('student');
@@ -18,7 +18,15 @@ export default function SchoolAdminPortal() {
   const [principalName, setPrincipalName] = useState('');
   const [principalEmail, setPrincipalEmail] = useState('');
   const [principalUsername, setPrincipalUsername] = useState('');
-  const [principalPassword, setPrincipalPassword] = useState('principal123');
+  const [principalPassword, setPrincipalPassword] = useState('');
+
+  React.useEffect(() => {
+    if (getNextSequentialId) {
+      const nextPId = getNextSequentialId('P');
+      setPrincipalUsername(nextPId);
+      setPrincipalPassword(nextPId);
+    }
+  }, [getNextSequentialId]);
 
   const schoolCode = activeSchool?.code || 'SCH2';
   const schoolName = activeSchool?.name || 'Green Valley Academy';

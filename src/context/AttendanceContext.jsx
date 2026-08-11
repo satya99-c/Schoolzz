@@ -1716,24 +1716,115 @@ export function AttendanceProvider({ children }) {
     submitLeaveApplication({ classId, rollNo, studentName: 'Student', leaveDate: leaveData.leaveDate || new Date().toISOString().split('T')[0], reason: leaveData.reason });
   };
 
+  // SEQUENTIAL ID GENERATOR (T001, P001, S001...)
+  const getNextSequentialId = useCallback((prefix) => {
+    const cleanPrefix = (prefix || 'S').toUpperCase();
+    let maxNum = 0;
+
+    // 1. Scan teachers and MOCK_USERS
+    const allUsers = [...teachers, ...MOCK_USERS];
+    allUsers.forEach(u => {
+      const candidates = [u.username, u.studentId, u.teacherId, u.principalId, u.id, u.aliasUsername];
+      candidates.forEach(c => {
+        if (c && typeof c === 'string') {
+          const upper = c.toUpperCase();
+          if (upper.startsWith(cleanPrefix)) {
+            const match = upper.match(/\d+/);
+            if (match) {
+              const num = parseInt(match[0], 10);
+              if (!isNaN(num) && num > maxNum) maxNum = num;
+            }
+          }
+        }
+      });
+    });
+
+    // 2. Scan all students across classes in state and localStorage
+    let savedStudents = {};
+    try {
+      savedStudents = JSON.parse(localStorage.getItem('schoolzz_students') || '{}');
+    } catch (e) {}
+
+    const allStudentLists = { ...students, ...savedStudents };
+    Object.values(allStudentLists).forEach(stList => {
+      if (Array.isArray(stList)) {
+        stList.forEach(st => {
+          const candidates = [st.studentId, st.username, st.id];
+          candidates.forEach(c => {
+            if (c && typeof c === 'string') {
+              const upper = c.toUpperCase();
+              if (upper.startsWith(cleanPrefix)) {
+                const match = upper.match(/\d+/);
+                if (match) {
+                  const num = parseInt(match[0], 10);
+                  if (!isNaN(num) && num > maxNum) maxNum = num;
+                }
+              }
+            }
+          });
+        });
+      }
+    });
+
+    const nextNum = maxNum + 1;
+    return `${cleanPrefix}${String(nextNum).padStart(3, '0')}`;
+  }, [teachers, students]);
+
+  // UPDATE USER PASSWORD (First-Time Reset or Password Change)
+  const updateUserPassword = (usernameOrId, newPassword) => {
+    setTeachers(prev =>
+      prev.map(t => {
+        if (t.username === usernameOrId || t.id === usernameOrId || t.teacherId === usernameOrId) {
+          return { ...t, password: newPassword, isFirstLogin: false };
+        }
+        return t;
+      })
+    );
+
+    setStudents(prev => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach(cId => {
+        updated[cId] = (updated[cId] || []).map(st => {
+          if (st.studentId === usernameOrId || st.username === usernameOrId || `S${String(st.rollNo).padStart(3, '0')}` === usernameOrId) {
+            return { ...st, passcode: newPassword, isFirstLogin: false };
+          }
+          return st;
+        });
+      });
+      try {
+        localStorage.setItem('schoolzz_students', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
+    if (currentUser) {
+      setCurrentUser(prev => ({
+        ...prev,
+        password: newPassword,
+        passcode: newPassword,
+        isFirstLogin: false
+      }));
+    }
+
+    showToast('🔑 Password updated successfully! Use your new password for future logins.', 'success');
+  };
+
   return (
     <AttendanceContext.Provider
       value={{
-        schools,
         activeSchool,
+        schools,
         selectSchool,
-        registerSchool,
+        addSchool,
         currentUser,
+        setCurrentUser,
         login,
         logout,
         switchRole,
-        activeClassId,
-        setActiveClassId,
         teachers,
         classes,
         students,
         submissions,
-        dbReports,
         whatsappLogs,
         substituteAssignments,
         assignSubstituteTeacher,
@@ -1764,6 +1855,8 @@ export function AttendanceProvider({ children }) {
         applyStudentLeave,
         toast,
         showToast,
+        getNextSequentialId,
+        updateUserPassword,
         activeWhatsAppPreview,
         setActiveWhatsAppPreview,
         approvalModalData,

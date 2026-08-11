@@ -3,7 +3,16 @@ import { X, UserPlus, Upload, ShieldCheck, CheckCircle2, DollarSign, School, Fil
 import { useAttendance } from '../context/AttendanceContext';
 
 export default function OnboardStudentModal({ onClose }) {
-  const { classes, students, createClassAndStudents, showToast } = useAttendance();
+  const { classes, students, createClassAndStudents, getNextSequentialId, showToast } = useAttendance();
+
+  // Auto-generated Student ID (S001, S002, S003...)
+  const [generatedStudentId, setGeneratedStudentId] = useState('');
+
+  useEffect(() => {
+    if (getNextSequentialId) {
+      setGeneratedStudentId(getNextSequentialId('S'));
+    }
+  }, [getNextSequentialId]);
 
   // Wizard Stepper State: 1 | 2 | 3 | 4
   const [currentStep, setCurrentStep] = useState(1);
@@ -142,8 +151,13 @@ export default function OnboardStudentModal({ onClose }) {
 
     const currentClassList = students[targetClassId] || [];
     const finalRollNo = Number(rollNo) || (currentClassList.length + 1);
+    const finalStudentId = generatedStudentId || `S${String(finalRollNo).padStart(3, '0')}`;
 
     const newStudentObj = {
+      studentId: finalStudentId,
+      username: finalStudentId,
+      passcode: finalStudentId, // Default password matches Username S001, S002...
+      isFirstLogin: true, // Prompts password change on first login
       rollNo: finalRollNo,
       name: studentName,
       gender,
@@ -169,7 +183,7 @@ export default function OnboardStudentModal({ onClose }) {
       localStorage.setItem('schoolzz_students', JSON.stringify(savedStudents));
     } catch (err) {}
 
-    showToast(`🎉 Student ${studentName} onboarded successfully into ${targetClassName}! Net Fee: ₹${netFee.toLocaleString('en-IN')}.`, 'success');
+    showToast(`🎉 Student ${studentName} onboarded! Login Username: ${finalStudentId} | Default Password: ${finalStudentId}`, 'success');
     onClose();
   };
 
@@ -261,10 +275,22 @@ export default function OnboardStudentModal({ onClose }) {
           {/* STEP 1: PERSONAL & GUARDIAN DETAILS */}
           {currentStep === 1 && (
             <div className="space-y-4 animate-fade-in">
-              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center space-x-1.5 border-b border-slate-200 pb-2">
-                <UserPlus className="w-4 h-4 text-[#1b4d3e]" />
-                <span>1. Personal & Guardian Details</span>
-              </h4>
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+                  <UserPlus className="w-4 h-4 text-[#1b4d3e]" />
+                  <span>1. Personal & Guardian Details</span>
+                </h4>
+                <span className="bg-emerald-100 text-[#1b4d3e] border border-emerald-300 font-mono font-black text-[11px] px-3 py-1 rounded-xl shadow-2xs">
+                  Student ID & Login Username: {generatedStudentId || 'S001'}
+                </span>
+              </div>
+
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs text-emerald-900 font-bold">
+                <span>🔑 Auto-Generated Login Credentials:</span>
+                <span className="font-mono text-emerald-950 font-black">
+                  Username: <span className="bg-white px-2 py-0.5 rounded border border-emerald-300">{generatedStudentId || 'S001'}</span> | Default Password: <span className="bg-white px-2 py-0.5 rounded border border-emerald-300">{generatedStudentId || 'S001'}</span>
+                </span>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>

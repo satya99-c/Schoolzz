@@ -3,7 +3,7 @@ import { useAttendance } from '../context/AttendanceContext';
 import { UserPlus, X, Check, ShieldAlert } from 'lucide-react';
 
 export default function OnboardTeacherModal({ onClose }) {
-  const { onboardTeacher } = useAttendance();
+  const { onboardTeacher, getNextSequentialId } = useAttendance();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -16,7 +16,15 @@ export default function OnboardTeacherModal({ onClose }) {
 
   React.useEffect(() => {
     window.scrollTo({ top: 50, behavior: 'smooth' });
-  }, []);
+    if (getNextSequentialId) {
+      const nextTId = getNextSequentialId('T');
+      setFormData(prev => ({
+        ...prev,
+        username: nextTId,
+        password: nextTId
+      }));
+    }
+  }, [getNextSequentialId]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
