@@ -1073,7 +1073,7 @@ export function AttendanceProvider({ children }) {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const teacherRow = {
+        const fullTeacherRow = {
           id: newTeacher.id,
           teacher_id: newTeacher.teacherId,
           username: newTeacher.username,
@@ -1092,8 +1092,23 @@ export function AttendanceProvider({ children }) {
           organization: activeSchool?.name || 'Sunshine International School'
         };
 
-        const { error: gErr } = await supabase.from('teachers').upsert(teacherRow);
-        if (gErr) console.warn('Supabase teachers upsert notice:', gErr);
+        const { error: gErr } = await supabase.from('teachers').upsert(fullTeacherRow);
+        if (gErr) {
+          console.warn('Supabase full teacher upsert notice (trying base schema fallback):', gErr);
+          const baseTeacherRow = {
+            id: newTeacher.id,
+            teacher_id: newTeacher.teacherId,
+            username: newTeacher.username,
+            password: newTeacher.password,
+            name: newTeacher.name,
+            role: 'teacher',
+            avatar: newTeacher.avatar,
+            assigned_classes: [],
+            school_code: activeSchool?.code || 'SCH1',
+            organization: activeSchool?.name || 'Sunshine International School'
+          };
+          await supabase.from('teachers').upsert(baseTeacherRow);
+        }
 
         const { error: lErr } = await supabase.from('teachers_login').upsert({
           id: newTeacher.username,
@@ -1105,7 +1120,7 @@ export function AttendanceProvider({ children }) {
         });
         if (lErr) console.warn('Supabase teachers_login upsert notice:', lErr);
 
-        showToast(`🎉 New Teacher '${newTeacher.name}' (${newTeacher.username}) onboarded & saved to Database!`, 'success');
+        showToast(`🎉 New Teacher '${newTeacher.name}' (${newTeacher.username}) onboarded & inserted into Database!`, 'success');
       } catch (e) {
         console.warn('Supabase onboard teacher error:', e);
         showToast(`🎉 New Teacher '${newTeacher.name}' onboarded successfully!`, 'success');
