@@ -163,7 +163,7 @@ export default function OnboardStudentModal({ onClose }) {
     }
 
     const currentClassList = students[targetClassId] || [];
-    const finalRollNo = Number(rollNo) || (currentClassList.length + 1);
+    const finalRollNo = currentClassList.length + 1; // Auto-populated when student is added to class section
     const finalStudentId = generatedStudentId || `S${String(finalRollNo).padStart(3, '0')}`;
 
     const newStudentObj = {
@@ -313,16 +313,14 @@ export default function OnboardStudentModal({ onClose }) {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
-                    <span>Roll Number *</span>
-                    <span className="text-[10px] font-bold text-emerald-700 uppercase">(Auto-populated)</span>
+                    <span>Student ID *</span>
+                    <span className="text-[10px] font-bold text-emerald-700 uppercase">(Auto-generated Username)</span>
                   </label>
                   <input
-                    type="number"
-                    required
-                    value={rollNo}
-                    onChange={(e) => setRollNo(e.target.value)}
-                    placeholder="Auto-calculated roll number"
-                    className="w-full bg-emerald-50/50 border border-emerald-300 rounded-xl px-3.5 py-2.5 text-xs font-black text-[#1b4d3e] focus:outline-none focus:border-[#1b4d3e]"
+                    type="text"
+                    readOnly
+                    value={generatedStudentId || 'S001'}
+                    className="w-full bg-emerald-50 border border-emerald-300 rounded-xl px-3.5 py-2.5 text-xs font-mono font-black text-[#1b4d3e] focus:outline-none cursor-not-allowed shadow-2xs"
                   />
                 </div>
 
