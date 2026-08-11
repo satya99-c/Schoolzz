@@ -19,7 +19,6 @@ export default function OnboardStudentModal({ onClose }) {
 
   // STEP 1: Student Personal Details
   const [studentName, setStudentName] = useState('');
-  const [rollNo, setRollNo] = useState('');
   const [gender, setGender] = useState('Male');
   const [dob, setDob] = useState('2014-05-15');
   const [parentName, setParentName] = useState('');
@@ -34,6 +33,20 @@ export default function OnboardStudentModal({ onClose }) {
   // Class Selection Mode: 'existing' | 'new_section'
   const [classMode, setClassMode] = useState(availableNonFullClasses.length > 0 ? 'existing' : 'new_section');
   const [selectedClassId, setSelectedClassId] = useState(availableNonFullClasses[0]?.id || '');
+
+  // Auto-calculate next Roll Number based on selected class section
+  const calculateAutoRollNo = (clsId, mode) => {
+    if (mode === 'new_section') return 1;
+    const existingList = students[clsId] || [];
+    return existingList.length + 1;
+  };
+
+  const [rollNo, setRollNo] = useState(() => calculateAutoRollNo(availableNonFullClasses[0]?.id, availableNonFullClasses.length > 0 ? 'existing' : 'new_section'));
+
+  // Sync rollNo whenever selected class or mode changes
+  useEffect(() => {
+    setRollNo(calculateAutoRollNo(selectedClassId, classMode));
+  }, [selectedClassId, classMode, students]);
 
   // Keep selectedClassId synced to first available non-full class or auto-switch to new section if all full
   useEffect(() => {
@@ -285,13 +298,6 @@ export default function OnboardStudentModal({ onClose }) {
                 </span>
               </div>
 
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs text-emerald-900 font-bold">
-                <span>🔑 Auto-Generated Login Credentials:</span>
-                <span className="font-mono text-emerald-950 font-black">
-                  Username: <span className="bg-white px-2 py-0.5 rounded border border-emerald-300">{generatedStudentId || 'S001'}</span> | Default Password: <span className="bg-white px-2 py-0.5 rounded border border-emerald-300">{generatedStudentId || 'S001'}</span>
-                </span>
-              </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Student Full Name *</label>
@@ -306,13 +312,17 @@ export default function OnboardStudentModal({ onClose }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Roll Number</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                    <span>Roll Number *</span>
+                    <span className="text-[10px] font-bold text-emerald-700 uppercase">(Auto-populated)</span>
+                  </label>
                   <input
                     type="number"
+                    required
                     value={rollNo}
                     onChange={(e) => setRollNo(e.target.value)}
-                    placeholder="Auto-assigned if empty"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                    placeholder="Auto-calculated roll number"
+                    className="w-full bg-emerald-50/50 border border-emerald-300 rounded-xl px-3.5 py-2.5 text-xs font-black text-[#1b4d3e] focus:outline-none focus:border-[#1b4d3e]"
                   />
                 </div>
 
