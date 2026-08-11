@@ -149,9 +149,6 @@ export default function SchoolAdminPortal() {
                   Student Enrollment & Admission
                 </span>
                 <h3 className="text-base font-black text-slate-900">Register / Onboard New Student to School</h3>
-                <p className="text-xs text-slate-600">
-                  Fill personal details, assign to an existing non-full class section (max 15 students) or auto-create a new class section, configure fee structure with discount concessions, and upload TC/ID documents.
-                </p>
               </div>
 
               <button
