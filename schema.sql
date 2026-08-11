@@ -1,5 +1,51 @@
--- Schoolzz Multi-Tenant Database Schema Script
--- Run this SQL in your Supabase SQL Editor to automatically create all required database tables.
+-- ==============================================================================
+-- 🚀 SCHOOLZZ SUPABASE DATABASE TABLE MIGRATION & CREATION SCRIPT
+-- Run this SQL in your Supabase Dashboard -> SQL Editor to add new columns to existing tables.
+-- ==============================================================================
+
+-- 1. 🛠️ ALTER EXISTING TABLES TO ADD NEW COLUMNS (RUN THIS FOR PRE-EXISTING TABLES)
+ALTER TABLE public.teachers ADD COLUMN IF NOT EXISTS teacher_id TEXT;
+ALTER TABLE public.teachers ADD COLUMN IF NOT EXISTS first_name TEXT;
+ALTER TABLE public.teachers ADD COLUMN IF NOT EXISTS last_name TEXT;
+ALTER TABLE public.teachers ADD COLUMN IF NOT EXISTS dob TEXT;
+ALTER TABLE public.teachers ADD COLUMN IF NOT EXISTS gender TEXT;
+ALTER TABLE public.teachers ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE public.teachers ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.teachers ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT '👨‍🏫';
+ALTER TABLE public.teachers ADD COLUMN IF NOT EXISTS assigned_classes JSONB DEFAULT '[]'::jsonb;
+
+ALTER TABLE public.teachers_login ADD COLUMN IF NOT EXISTS teacher_id TEXT;
+ALTER TABLE public.teachers_login ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public.teachers_login ADD COLUMN IF NOT EXISTS school_code TEXT DEFAULT 'SCH1';
+
+ALTER TABLE public.principals ADD COLUMN IF NOT EXISTS principal_id TEXT;
+ALTER TABLE public.principals ADD COLUMN IF NOT EXISTS organization TEXT;
+
+ALTER TABLE public.principals_login ADD COLUMN IF NOT EXISTS principal_id TEXT;
+ALTER TABLE public.principals_login ADD COLUMN IF NOT EXISTS school_name TEXT;
+
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS student_id TEXT;
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS username TEXT;
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS passcode TEXT;
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS is_first_login BOOLEAN DEFAULT true;
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS dob TEXT;
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS parent_name TEXT;
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS documents JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS fee_info JSONB DEFAULT '{}'::jsonb;
+
+ALTER TABLE public.students_login ADD COLUMN IF NOT EXISTS student_id TEXT;
+ALTER TABLE public.students_login ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public.students_login ADD COLUMN IF NOT EXISTS is_first_login BOOLEAN DEFAULT true;
+
+ALTER TABLE public.student_fees ADD COLUMN IF NOT EXISTS total_fee NUMERIC DEFAULT 45000;
+ALTER TABLE public.student_fees ADD COLUMN IF NOT EXISTS discount_amount NUMERIC DEFAULT 5000;
+ALTER TABLE public.student_fees ADD COLUMN IF NOT EXISTS net_fee NUMERIC DEFAULT 40000;
+ALTER TABLE public.student_fees ADD COLUMN IF NOT EXISTS paid_amount NUMERIC DEFAULT 0;
+ALTER TABLE public.student_fees ADD COLUMN IF NOT EXISTS due_amount NUMERIC DEFAULT 40000;
+
+-- ==============================================================================
+-- 2. 📋 CREATE TABLES IF THEY DO NOT EXIST
+-- ==============================================================================
 
 -- 1. Organizations Table
 CREATE TABLE IF NOT EXISTS public.organizations (
@@ -209,7 +255,7 @@ CREATE TABLE IF NOT EXISTS public.student_fees (
     net_fee NUMERIC DEFAULT 40000,
     paid_amount NUMERIC DEFAULT 0,
     due_amount NUMERIC DEFAULT 40000,
-    status TEXT DEFAULT 'DUE',
+    status TEXT DEFAULT 'NOT_PAID',
     due_date TEXT DEFAULT '15 Aug 2026',
     school_code TEXT DEFAULT 'SCH1',
     created_at TIMESTAMPTZ DEFAULT NOW()
