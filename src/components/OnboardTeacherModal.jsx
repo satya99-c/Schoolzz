@@ -6,7 +6,12 @@ export default function OnboardTeacherModal({ onClose }) {
   const { onboardTeacher, getNextSequentialId } = useAttendance();
 
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
+    dob: '',
+    gender: 'Male',
+    phone: '',
+    email: '',
     username: '',
     password: '',
     avatar: '👨‍🏫'
@@ -33,14 +38,20 @@ export default function OnboardTeacherModal({ onClose }) {
     setIsSubmitting(true);
     setError('');
 
-    if (!formData.name || !formData.username || !formData.password) {
-      setError('Please fill in all required fields.');
+    if (!formData.firstName || !formData.lastName || !formData.username || !formData.password) {
+      setError('Please fill in all required fields (First Name, Last Name, Username, Password).');
       setIsSubmitting(false);
       return;
     }
 
     try {
-      const result = await onboardTeacher(formData);
+      const teacherFullName = `${formData.firstName} ${formData.lastName}`.trim();
+      const payload = {
+        ...formData,
+        name: teacherFullName
+      };
+
+      const result = await onboardTeacher(payload);
       if (result && result.success) {
         onClose();
       } else {
@@ -55,7 +66,7 @@ export default function OnboardTeacherModal({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 md:pt-10 p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden space-y-6">
+      <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden space-y-6 my-4">
         
         {/* Header */}
         <div className="bg-[#1b4d3e] px-6 py-5 border-b border-emerald-800 flex items-center justify-between">
@@ -77,7 +88,7 @@ export default function OnboardTeacherModal({ onClose }) {
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4 text-xs">
           
           {error && (
             <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3 rounded-2xl flex items-center space-x-2">
@@ -86,37 +97,107 @@ export default function OnboardTeacherModal({ onClose }) {
             </div>
           )}
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">Teacher Full Name *</label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Dr. Rajesh Kumar"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+          {/* First Name & Last Name */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Login Username *</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">First Name *</label>
               <input
                 type="text"
                 required
-                placeholder="e.g. teacher4"
+                placeholder="e.g. Srikanth"
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Last Name *</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Sharma"
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+              />
+            </div>
+          </div>
+
+          {/* Date of Birth & Gender */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Date of Birth *</label>
+              <input
+                type="date"
+                required
+                value={formData.dob}
+                onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Gender *</label>
+              <select
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#1b4d3e]"
+              >
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Mobile Number & Email Id */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Number *</label>
+              <input
+                type="tel"
+                required
+                placeholder="e.g. +91 98765 43210"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Email Id *</label>
+              <input
+                type="email"
+                required
+                placeholder="e.g. srikanth@schoolzz.edu"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#1b4d3e] font-mono"
+              />
+            </div>
+          </div>
+
+          {/* Login Username & Password */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Login Username *</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. T010"
                 value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().trim() })}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value.toUpperCase().trim() })}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#1b4d3e] font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Login Password *</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Login Password *</label>
               <input
                 type="password"
                 required
-                placeholder="e.g. teacher4"
+                placeholder="e.g. T010"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#1b4d3e] font-mono"
@@ -154,10 +235,11 @@ export default function OnboardTeacherModal({ onClose }) {
             </button>
             <button
               type="submit"
-              className="w-1/2 py-2.5 rounded-xl bg-[#1b4d3e] hover:bg-[#143c30] text-white text-xs font-bold shadow-md transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+              disabled={isSubmitting}
+              className="w-1/2 py-2.5 rounded-xl bg-[#1b4d3e] hover:bg-[#143c30] text-white text-xs font-bold shadow-md transition-all flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
             >
               <Check className="w-4 h-4 text-emerald-200" />
-              <span>Onboard Teacher</span>
+              <span>{isSubmitting ? 'Onboarding...' : 'Onboard Teacher'}</span>
             </button>
           </div>
 

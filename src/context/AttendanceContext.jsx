@@ -1032,12 +1032,20 @@ export function AttendanceProvider({ children }) {
     }
 
     const teacherId = finalUsername;
+    const fullName = (teacherData.name || `${teacherData.firstName || ''} ${teacherData.lastName || ''}`).trim() || 'Teacher';
+    
     const newTeacher = {
       id: teacherId,
       teacherId: teacherId,
       username: finalUsername,
       password: teacherData.password || finalUsername,
-      name: teacherData.name,
+      name: fullName,
+      firstName: teacherData.firstName || '',
+      lastName: teacherData.lastName || '',
+      dob: teacherData.dob || '',
+      gender: teacherData.gender || 'Male',
+      phone: teacherData.phone || '',
+      email: teacherData.email || '',
       role: 'teacher',
       avatar: teacherData.avatar || '👨‍🏫',
       assignedClasses: [],
@@ -1071,6 +1079,12 @@ export function AttendanceProvider({ children }) {
           username: newTeacher.username,
           password: newTeacher.password,
           name: newTeacher.name,
+          first_name: newTeacher.firstName,
+          last_name: newTeacher.lastName,
+          dob: newTeacher.dob,
+          gender: newTeacher.gender,
+          phone: newTeacher.phone,
+          email: newTeacher.email,
           role: 'teacher',
           avatar: newTeacher.avatar,
           assigned_classes: [],
