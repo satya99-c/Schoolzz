@@ -6,6 +6,7 @@ export default function OnboardTeacherModal({ onClose }) {
   const { onboardTeacher, getNextSequentialId } = useAttendance();
 
   const [formData, setFormData] = useState({
+    teacherId: '',
     firstName: '',
     lastName: '',
     dob: '',
@@ -26,6 +27,7 @@ export default function OnboardTeacherModal({ onClose }) {
       const nextTId = getNextSequentialId('T');
       setFormData(prev => ({
         ...prev,
+        teacherId: nextTId,
         username: nextTId,
         password: nextTId
       }));
@@ -178,8 +180,18 @@ export default function OnboardTeacherModal({ onClose }) {
             </div>
           </div>
 
-          {/* Login Username & Password */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Teacher ID, Login Username & Password */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Teacher ID *</label>
+              <input
+                type="text"
+                readOnly
+                value={formData.teacherId || formData.username}
+                className="w-full bg-slate-100 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono font-bold cursor-not-allowed"
+              />
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Login Username *</label>
               <input
