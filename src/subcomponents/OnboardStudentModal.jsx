@@ -95,7 +95,7 @@ export default function OnboardStudentModal({ onClose }) {
   // STEP 3: Financial & Fee Structure
   const [totalFee, setTotalFee] = useState(45000);
   const [discountAmount, setDiscountAmount] = useState(5000);
-  const [paymentStatus, setPaymentStatus] = useState('pending'); // 'pending' | 'paid'
+  const [paymentStatus, setPaymentStatus] = useState('not_paid'); // 'not_paid' | 'pending' | 'paid'
 
   const netFee = Math.max(0, Number(totalFee) - Number(discountAmount));
 
@@ -583,6 +583,7 @@ export default function OnboardStudentModal({ onClose }) {
                     onChange={(e) => setPaymentStatus(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
                   >
+                    <option value="not_paid">Not Paid</option>
                     <option value="pending">Due / Pending</option>
                     <option value="paid">Paid (Fully Cleared)</option>
                   </select>
