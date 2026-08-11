@@ -345,19 +345,27 @@ export default function AttendanceDeck({
                 <button
                   onClick={() => !isLocked && onFinish(markedRecords)}
                   disabled={isLocked}
-                  className={`px-3.5 py-1.5 rounded-xl font-extrabold text-xs flex items-center space-x-1 transition-all border ${
+                  className={`px-3.5 py-1.5 rounded-xl font-extrabold text-xs flex items-center space-x-1.5 transition-all border ${
                     isLocked
                       ? 'bg-emerald-950/40 text-emerald-300/40 border-emerald-800/40 cursor-not-allowed opacity-60 shadow-none'
-                      : 'bg-white hover:bg-emerald-50 text-[#1b4d3e] cursor-pointer active:scale-95 border-emerald-200 shadow-md'
+                      : markedRecords.length >= Math.min(15, studentList.length)
+                      ? 'bg-emerald-400 hover:bg-emerald-300 text-slate-950 cursor-pointer active:scale-95 border-emerald-300 shadow-md font-black'
+                      : 'bg-amber-400/90 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-95 border-amber-300 shadow-sm'
                   }`}
-                  title={isLocked ? 'Attendance is locked after submission' : 'Submit attendance'}
+                  title={isLocked ? 'Attendance is locked after submission' : `Review marked attendance (${markedRecords.length}/${studentList.length})`}
                 >
                   {isLocked ? (
                     <Lock className="w-3.5 h-3.5 text-emerald-300/40" />
                   ) : (
-                    <CheckCircle className="w-3.5 h-3.5 text-[#1b4d3e]" />
+                    <CheckCircle className="w-3.5 h-3.5 text-slate-950" />
                   )}
-                  <span>{isLocked ? 'Submit (Locked)' : 'Submit'}</span>
+                  <span>
+                    {isLocked
+                      ? 'Submit (Locked)'
+                      : markedRecords.length >= Math.min(15, studentList.length)
+                      ? 'Finish & Review (15/15)'
+                      : `Review (${markedRecords.length}/${Math.min(15, studentList.length)})`}
+                  </span>
                 </button>
               )}
             </div>

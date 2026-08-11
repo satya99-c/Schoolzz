@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Send, CheckCircle2, XCircle, Calendar, RefreshCw, UserCheck, Lock } from 'lucide-react';
 
-export default function AttendanceSummary({ classInfo, markedRecords, submissionStatus = 'NOT_SUBMITTED', onBackToDeck, onConfirmSubmit, onSubmit }) {
+export default function AttendanceSummary({ classInfo, markedRecords, studentList = [], submissionStatus = 'NOT_SUBMITTED', onBackToDeck, onConfirmSubmit, onSubmit }) {
   const [records, setRecords] = useState(markedRecords);
 
+  const totalClassStudents = Math.min(15, studentList.length > 0 ? studentList.length : 15);
+  const isAttendanceComplete = records.length >= totalClassStudents;
   const isLocked = (submissionStatus === 'PENDING_APPROVAL' || submissionStatus === 'APPROVED') && submissionStatus !== 'DECLINED';
 
   const presentCount = records.filter(r => r.status === 'present').length;
@@ -38,7 +40,7 @@ export default function AttendanceSummary({ classInfo, markedRecords, submission
   };
 
   const handleFinalSubmit = () => {
-    if (isLocked) return;
+    if (isLocked || !isAttendanceComplete) return;
     const submitFn = onConfirmSubmit || onSubmit;
     if (submitFn) {
       submitFn(records);
@@ -77,6 +79,27 @@ export default function AttendanceSummary({ classInfo, markedRecords, submission
           </div>
         </div>
       </div>
+
+      {/* Incomplete Attendance Alert Banner */}
+      {!isAttendanceComplete && (
+        <div className="bg-amber-50 border border-amber-300 p-4 rounded-3xl text-amber-900 text-xs font-bold flex items-center justify-between shadow-sm">
+          <div className="flex items-center space-x-2.5">
+            <span className="text-lg">⚠️</span>
+            <div>
+              <span className="font-extrabold text-amber-950 text-sm block">Attendance Incomplete</span>
+              <span>
+                Only <strong>{records.length} / {totalClassStudents}</strong> students have been marked. You must mark attendance for all {totalClassStudents} students before submitting to the Principal.
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => onBackToDeck(records)}
+            className="px-3.5 py-1.5 bg-amber-200 hover:bg-amber-300 text-amber-950 rounded-xl font-bold transition-all shadow-2xs shrink-0 cursor-pointer"
+          >
+            Mark Remaining ({totalClassStudents - records.length})
+          </button>
+        </div>
+      )}
 
       {/* Absent Students Cross-Check Section */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md space-y-4">
@@ -170,9 +193,9 @@ export default function AttendanceSummary({ classInfo, markedRecords, submission
         {/* SUBMIT FOR APPROVAL BUTTON */}
         <button
           onClick={handleFinalSubmit}
-          disabled={isLocked}
+          disabled={isLocked || !isAttendanceComplete}
           className={`w-full sm:w-auto flex items-center justify-center space-x-2 px-8 py-3.5 rounded-2xl font-extrabold text-sm shadow-md transition-all ${
-            isLocked
+            isLocked || !isAttendanceComplete
               ? 'bg-slate-200 border border-slate-300 text-slate-400 cursor-not-allowed shadow-none'
               : 'bg-[#1b4d3e] hover:bg-[#143c30] text-white cursor-pointer active:scale-95'
           }`}
@@ -181,6 +204,10 @@ export default function AttendanceSummary({ classInfo, markedRecords, submission
             <>
               <Lock className="w-4 h-4 text-slate-400" />
               <span>SUBMISSION LOCKED ({submissionStatus === 'APPROVED' ? 'APPROVED' : 'PENDING APPROVAL'})</span>
+            </>
+          ) : !isAttendanceComplete ? (
+            <>
+              <span>MARK ALL {totalClassStudents} STUDENTS TO SUBMIT ({records.length}/{totalClassStudents})</span>
             </>
           ) : (
             <>

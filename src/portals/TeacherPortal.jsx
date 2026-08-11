@@ -109,6 +109,14 @@ export default function TeacherPortal() {
   };
 
   const handleFinalSubmit = (finalRecords) => {
+    const targetStudentList = students[activeClassId] || [];
+    const requiredCount = Math.min(15, targetStudentList.length > 0 ? targetStudentList.length : 15);
+    
+    if (finalRecords.length < requiredCount) {
+      showToast(`⚠️ Cannot submit: Attendance for all ${requiredCount} students must be marked before submitting. (${finalRecords.length}/${requiredCount} marked)`, 'error');
+      return;
+    }
+
     submitTeacherAttendance(activeClassId, finalRecords);
     setMode('submitted_success');
   };
