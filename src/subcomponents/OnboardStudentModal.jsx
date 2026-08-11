@@ -3,7 +3,7 @@ import { X, UserPlus, Upload, ShieldCheck, CheckCircle2, DollarSign, School, Fil
 import { useAttendance } from '../context/AttendanceContext';
 
 export default function OnboardStudentModal({ onClose }) {
-  const { classes, students, createClassAndStudents, getNextSequentialId, showToast } = useAttendance();
+  const { classes, students, createClassAndStudents, onboardStudent, getNextSequentialId, showToast } = useAttendance();
 
   // Auto-generated Student ID (S001, S002, S003...)
   const [generatedStudentId, setGeneratedStudentId] = useState('');
@@ -189,14 +189,17 @@ export default function OnboardStudentModal({ onClose }) {
       }
     };
 
-    currentClassList.push(newStudentObj);
-    try {
-      const savedStudents = JSON.parse(localStorage.getItem('schoolzz_students') || '{}');
-      savedStudents[targetClassId] = currentClassList;
-      localStorage.setItem('schoolzz_students', JSON.stringify(savedStudents));
-    } catch (err) {}
-
-    showToast(`🎉 Student ${studentName} onboarded! Login Username: ${finalStudentId} | Default Password: ${finalStudentId}`, 'success');
+    if (onboardStudent) {
+      onboardStudent(targetClassId, newStudentObj);
+    } else {
+      currentClassList.push(newStudentObj);
+      try {
+        const savedStudents = JSON.parse(localStorage.getItem('schoolzz_students') || '{}');
+        savedStudents[targetClassId] = currentClassList;
+        localStorage.setItem('schoolzz_students', JSON.stringify(savedStudents));
+      } catch (err) {}
+      showToast(`🎉 Student ${studentName} onboarded! Login Username: ${finalStudentId} | Default Password: ${finalStudentId}`, 'success');
+    }
     onClose();
   };
 

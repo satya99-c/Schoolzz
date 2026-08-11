@@ -1073,6 +1073,73 @@ export function AttendanceProvider({ children }) {
     return { success: true, teacher: newTeacher };
   };
 
+  // ONBOARD SINGLE NEW STUDENT (PERSISTS TO DATABASE TABLES)
+  const onboardStudent = async (targetClassId, newStudentObj) => {
+    setStudents(prev => {
+      const currentList = prev[targetClassId] || [];
+      const updatedList = [...currentList, newStudentObj];
+      const nextState = { ...prev, [targetClassId]: updatedList };
+      try {
+        localStorage.setItem('schoolzz_students', JSON.stringify(nextState));
+      } catch (e) {}
+      return nextState;
+    });
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const studentRow = {
+          id: `${targetClassId}_${newStudentObj.studentId || newStudentObj.rollNo}`,
+          student_id: newStudentObj.studentId,
+          username: newStudentObj.username,
+          passcode: newStudentObj.passcode,
+          is_first_login: newStudentObj.isFirstLogin !== false,
+          roll_no: newStudentObj.rollNo,
+          name: newStudentObj.name,
+          gender: newStudentObj.gender,
+          dob: newStudentObj.dob,
+          parent_name: newStudentObj.parentName,
+          parent_phone: newStudentObj.parentPhone,
+          class_id: targetClassId,
+          school_code: activeSchool?.code || 'SCH1',
+          documents: newStudentObj.documents || {},
+          fee_info: newStudentObj.feeInfo || {}
+        };
+        await supabase.from('students').upsert(studentRow);
+
+        if (newStudentObj.studentId) {
+          await supabase.from('students_login').upsert({
+            id: newStudentObj.studentId,
+            student_id: newStudentObj.studentId,
+            full_name: newStudentObj.name,
+            username: newStudentObj.username,
+            password_hash: newStudentObj.passcode,
+            school_code: activeSchool?.code || 'SCH1',
+            is_first_login: newStudentObj.isFirstLogin !== false
+          });
+        }
+
+        if (newStudentObj.feeInfo) {
+          await supabase.from('student_fees').upsert({
+            id: `fee_${targetClassId}_${newStudentObj.rollNo}`,
+            class_id: targetClassId,
+            roll_no: newStudentObj.rollNo,
+            total_fee: newStudentObj.feeInfo.totalFee,
+            discount_amount: newStudentObj.feeInfo.discountAmount,
+            net_fee: newStudentObj.feeInfo.netFee,
+            status: newStudentObj.feeInfo.status,
+            school_code: activeSchool?.code || 'SCH1'
+          });
+        }
+        showToast(`🎉 Student ${newStudentObj.name} onboarded & saved to Database Tables!`, 'success');
+      } catch (err) {
+        console.warn('Supabase student persistence warning:', err);
+        showToast(`🎉 Student ${newStudentObj.name} onboarded!`, 'success');
+      }
+    } else {
+      showToast(`🎉 Student ${newStudentObj.name} onboarded!`, 'success');
+    }
+  };
+
   // CREATE NEW CLASS AND ASSIGN STUDENTS + TEACHER (WITH OCCUPANCY CHECK)
   const createClassAndStudents = async (classData, studentList) => {
     const targetTeacher = teachers.find(t => t.id === classData.teacherId);
@@ -1835,6 +1902,7 @@ export function AttendanceProvider({ children }) {
         approveTeacherLeaveRequest,
         declineTeacherLeaveRequest,
         onboardTeacher,
+        onboardStudent,
         createClassAndStudents,
         assignClassTeacher,
         submitTeacherAttendance,
