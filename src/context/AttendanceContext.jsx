@@ -1024,17 +1024,19 @@ export function AttendanceProvider({ children }) {
 
   // ONBOARD NEW TEACHER (PERSISTS TO TEACHERS AND TEACHERS_LOGIN TABLES)
   const onboardTeacher = async (teacherData) => {
-    const exists = teachers.some(t => t.username.toLowerCase() === teacherData.username.toLowerCase());
-    if (exists) {
-      return { success: false, error: `Username '${teacherData.username}' is already taken!` };
+    let finalUsername = (teacherData.username || '').trim();
+
+    // Auto-generate fresh unique sequential ID if empty or taken
+    if (!finalUsername || teachers.some(t => t.username.toLowerCase() === finalUsername.toLowerCase())) {
+      finalUsername = getNextSequentialId ? getNextSequentialId('T') : `T${String(teachers.length + 1).padStart(3, '0')}`;
     }
 
-    const teacherId = teacherData.username || `T${String(teachers.length + 1).padStart(3, '0')}`;
+    const teacherId = finalUsername;
     const newTeacher = {
       id: teacherId,
       teacherId: teacherId,
-      username: teacherData.username || teacherId,
-      password: teacherData.password || teacherId,
+      username: finalUsername,
+      password: teacherData.password || finalUsername,
       name: teacherData.name,
       role: 'teacher',
       avatar: teacherData.avatar || '👨‍🏫',
@@ -1043,8 +1045,23 @@ export function AttendanceProvider({ children }) {
       organization: activeSchool?.name || 'Sunshine International School'
     };
 
-    setTeachers(prev => [...prev, newTeacher]);
-    MOCK_USERS.push(newTeacher);
+    // Update teachers state (avoiding duplicates)
+    setTeachers(prev => {
+      const filtered = prev.filter(t => t.username.toLowerCase() !== finalUsername.toLowerCase());
+      const updated = [...filtered, newTeacher];
+      try {
+        localStorage.setItem('schoolzz_teachers', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
+    // Update MOCK_USERS without duplicates
+    const mockIdx = MOCK_USERS.findIndex(u => u.username.toLowerCase() === finalUsername.toLowerCase());
+    if (mockIdx >= 0) {
+      MOCK_USERS[mockIdx] = newTeacher;
+    } else {
+      MOCK_USERS.push(newTeacher);
+    }
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -1074,13 +1091,13 @@ export function AttendanceProvider({ children }) {
         });
         if (lErr) console.warn('Supabase teachers_login upsert notice:', lErr);
 
-        showToast(`New Teacher '${newTeacher.name}' onboarded & saved to Database!`, 'success');
+        showToast(`🎉 New Teacher '${newTeacher.name}' (${newTeacher.username}) onboarded & saved to Database!`, 'success');
       } catch (e) {
         console.warn('Supabase onboard teacher error:', e);
-        showToast(`New Teacher '${newTeacher.name}' onboarded successfully!`, 'success');
+        showToast(`🎉 New Teacher '${newTeacher.name}' onboarded successfully!`, 'success');
       }
     } else {
-      showToast(`New Teacher '${newTeacher.name}' onboarded successfully!`, 'success');
+      showToast(`🎉 New Teacher '${newTeacher.name}' onboarded successfully!`, 'success');
     }
 
     return { success: true, teacher: newTeacher };

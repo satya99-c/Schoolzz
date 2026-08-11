@@ -13,6 +13,7 @@ export default function OnboardTeacherModal({ onClose }) {
   });
 
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
     window.scrollTo({ top: 50, behavior: 'smooth' });
@@ -28,9 +29,13 @@ export default function OnboardTeacherModal({ onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError('');
+
     if (!formData.name || !formData.username || !formData.password) {
       setError('Please fill in all required fields.');
+      setIsSubmitting(false);
       return;
     }
 
@@ -40,9 +45,11 @@ export default function OnboardTeacherModal({ onClose }) {
         onClose();
       } else {
         setError(result?.error || 'Failed to onboard teacher');
+        setIsSubmitting(false);
       }
     } catch (err) {
       setError('Failed to onboard teacher. Please try again.');
+      setIsSubmitting(false);
     }
   };
 
