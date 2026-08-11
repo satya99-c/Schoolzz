@@ -312,10 +312,7 @@ export default function OnboardStudentModal({ onClose }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
-                    <span>Student ID *</span>
-                    <span className="text-[10px] font-bold text-emerald-700 uppercase">(Auto-generated Username)</span>
-                  </label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Student ID *</label>
                   <input
                     type="text"
                     readOnly
