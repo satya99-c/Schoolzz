@@ -5,7 +5,7 @@ import OnboardStudentModal from '../subcomponents/OnboardStudentModal';
 import { Building2, Shield, UserPlus, Copy, CheckCircle, School, Users, BookOpen, KeyRound, Mail, Sparkles, User, GraduationCap, ChevronDown, ShieldCheck, PlusCircle } from 'lucide-react';
 
 export default function SchoolAdminPortal() {
-  const { activeSchool, teachers, classes, students, getNextSequentialId, showToast } = useAttendance();
+  const { activeSchool, teachers, classes, students, createPrincipalAccount, getNextSequentialId, showToast } = useAttendance();
 
   // Selection Dropdown: 'student' | 'teacher' | 'principal'
   const [whomToOnboard, setWhomToOnboard] = useState('student');
@@ -41,20 +41,30 @@ export default function SchoolAdminPortal() {
     showToast(`Copied shareable school portal link: ${shareableUrl}`, 'success');
   };
 
-  const handleCreatePrincipalSubmit = (e) => {
+  const handleCreatePrincipalSubmit = async (e) => {
     e.preventDefault();
     if (!principalName || !principalUsername || !principalPassword) {
       showToast('Please fill out all required Principal details.', 'error');
       return;
     }
 
-    showToast(`Principal Account "${principalName}" (Username: ${principalUsername}) created for ${schoolName}!`, 'success');
+    if (createPrincipalAccount) {
+      await createPrincipalAccount({
+        name: principalName,
+        email: principalEmail,
+        username: principalUsername,
+        password: principalPassword
+      });
+    } else {
+      showToast(`Principal Account "${principalName}" (Username: ${principalUsername}) created for ${schoolName}!`, 'success');
+    }
     
     // Reset form
     setPrincipalName('');
     setPrincipalEmail('');
-    setPrincipalUsername('');
-    setPrincipalPassword('principal123');
+    const nextPId = getNextSequentialId ? getNextSequentialId('P') : 'P001';
+    setPrincipalUsername(nextPId);
+    setPrincipalPassword(nextPId);
   };
 
   return (

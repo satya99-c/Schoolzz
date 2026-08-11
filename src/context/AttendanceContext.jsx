@@ -1103,6 +1103,80 @@ export function AttendanceProvider({ children }) {
     return { success: true, teacher: newTeacher };
   };
 
+  // ONBOARD NEW PRINCIPAL ACCOUNT (PERSISTS TO PRINCIPALS AND PRINCIPALS_LOGIN TABLES)
+  const createPrincipalAccount = async (principalData) => {
+    let finalUsername = (principalData.username || '').trim();
+    if (!finalUsername) {
+      finalUsername = getNextSequentialId ? getNextSequentialId('P') : `P001`;
+    }
+
+    const pId = finalUsername;
+    const newPrincipal = {
+      id: pId,
+      principalId: pId,
+      username: finalUsername,
+      password: principalData.password || 'principal123',
+      name: principalData.name,
+      email: principalData.email || `principal@${(activeSchool?.code || 'sch1').toLowerCase()}.edu`,
+      role: 'principal',
+      avatar: '🛡️',
+      schoolCode: activeSchool?.code || 'SCH1',
+      organization: activeSchool?.name || 'Sunshine International School'
+    };
+
+    setTeachers(prev => {
+      const filtered = prev.filter(t => t.username.toLowerCase() !== finalUsername.toLowerCase());
+      const updated = [...filtered, newPrincipal];
+      try {
+        localStorage.setItem('schoolzz_teachers', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
+    const mockIdx = MOCK_USERS.findIndex(u => u.username.toLowerCase() === finalUsername.toLowerCase());
+    if (mockIdx >= 0) {
+      MOCK_USERS[mockIdx] = newPrincipal;
+    } else {
+      MOCK_USERS.push(newPrincipal);
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('principals').upsert({
+          id: newPrincipal.id,
+          principal_id: newPrincipal.principalId,
+          name: newPrincipal.name,
+          email: newPrincipal.email,
+          username: newPrincipal.username,
+          password: newPrincipal.password,
+          school_code: activeSchool?.code || 'SCH1',
+          organization: activeSchool?.name || 'Sunshine International School'
+        });
+
+        await supabase.from('principals_login').upsert({
+          id: newPrincipal.username,
+          principal_id: newPrincipal.principalId,
+          full_name: newPrincipal.name,
+          email: newPrincipal.email,
+          username: newPrincipal.username,
+          password_hash: newPrincipal.password,
+          school_name: activeSchool?.name || 'Sunshine International School',
+          school_code: activeSchool?.code || 'SCH1',
+          status: 'ACTIVE'
+        });
+
+        showToast(`🛡️ Principal '${newPrincipal.name}' (${newPrincipal.username}) onboarded & saved to Database!`, 'success');
+      } catch (e) {
+        console.warn('Supabase principal insert warning:', e);
+        showToast(`🛡️ Principal '${newPrincipal.name}' onboarded successfully!`, 'success');
+      }
+    } else {
+      showToast(`🛡️ Principal '${newPrincipal.name}' onboarded successfully!`, 'success');
+    }
+
+    return { success: true, principal: newPrincipal };
+  };
+
   // ONBOARD SINGLE NEW STUDENT (PERSISTS TO DATABASE TABLES)
   const onboardStudent = async (targetClassId, newStudentObj) => {
     setStudents(prev => {
@@ -1933,6 +2007,7 @@ export function AttendanceProvider({ children }) {
         declineTeacherLeaveRequest,
         onboardTeacher,
         onboardStudent,
+        createPrincipalAccount,
         createClassAndStudents,
         assignClassTeacher,
         submitTeacherAttendance,
