@@ -492,22 +492,6 @@ export default function PrincipalPortal() {
 
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setShowOnboardStudentModal(true)}
-                className="px-4 py-2 rounded-xl bg-amber-400 text-slate-950 border border-amber-300 hover:bg-amber-300 text-xs font-black transition-all flex items-center space-x-1.5 shadow-md cursor-pointer"
-              >
-                <GraduationCap className="w-4 h-4 text-slate-950" />
-                <span>🎓 Onboard / Register New Student</span>
-              </button>
-
-              <button
-                onClick={() => setShowOnboardModal(true)}
-                className="px-4 py-2 rounded-xl bg-[#1b4d3e] text-white hover:bg-[#143c30] text-xs font-bold transition-all flex items-center space-x-1.5 shadow-md cursor-pointer"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>+ Onboard New Teacher</span>
-              </button>
-
-              <button
                 onClick={() => setShowCreateClassModal(true)}
                 className="px-4 py-2 rounded-xl bg-emerald-100 text-[#1b4d3e] border border-emerald-300 hover:bg-emerald-200 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm cursor-pointer"
               >
