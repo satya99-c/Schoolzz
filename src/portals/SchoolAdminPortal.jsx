@@ -30,7 +30,8 @@ export default function SchoolAdminPortal() {
 
   const schoolCode = activeSchool?.code || 'SCH2';
   const schoolName = activeSchool?.name || 'Green Valley Academy';
-  const shareableUrl = `${window.location.origin}/?school=${schoolCode}`;
+  const originStr = typeof window !== 'undefined' ? window.location.origin : '';
+  const shareableUrl = `${originStr}/?school=${schoolCode}`;
 
   // Count totals
   const totalStudentsCount = Object.values(students).reduce((acc, curr) => acc + (curr?.length || 0), 0);

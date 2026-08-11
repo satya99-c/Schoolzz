@@ -17,7 +17,8 @@ export default function OrgPortal({ onSelectSchool }) {
 
   const handleCopyLink = (code, e) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/?school=${code}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${origin}/?school=${code}`;
     navigator.clipboard.writeText(url);
     showToast(`Copied school shareable link: ${url}`, 'success');
   };
@@ -89,7 +90,8 @@ export default function OrgPortal({ onSelectSchool }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {displaySchools.map((sch) => {
             const isSelected = activeSchool?.code === sch.code;
-            const shareableUrl = `${window.location.origin}/?school=${sch.code}`;
+            const originStr = typeof window !== 'undefined' ? window.location.origin : '';
+            const shareableUrl = `${originStr}/?school=${sch.code}`;
 
             return (
               <div

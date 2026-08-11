@@ -11,6 +11,8 @@ import WhatsAppModal from './components/WhatsAppModal';
 import ApprovalSuccessModal from './components/ApprovalSuccessModal';
 import { CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 
+import ErrorBoundary from './components/ErrorBoundary';
+
 function MainAppContent() {
   const { currentUser, toast, activeSchool } = useAttendance();
   const [showOrgPortal, setShowOrgPortal] = useState(false);
@@ -94,8 +96,10 @@ function MainAppContent() {
 
 export default function App() {
   return (
-    <AttendanceProvider>
-      <MainAppContent />
-    </AttendanceProvider>
+    <ErrorBoundary>
+      <AttendanceProvider>
+        <MainAppContent />
+      </AttendanceProvider>
+    </ErrorBoundary>
   );
 }
