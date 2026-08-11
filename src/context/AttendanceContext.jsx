@@ -1022,17 +1022,19 @@ export function AttendanceProvider({ children }) {
     localStorage.setItem('schoolzz_whatsapp', JSON.stringify(whatsappLogs));
   }, [whatsappLogs]);
 
-  // ONBOARD NEW TEACHER
+  // ONBOARD NEW TEACHER (PERSISTS TO TEACHERS AND TEACHERS_LOGIN TABLES)
   const onboardTeacher = async (teacherData) => {
     const exists = teachers.some(t => t.username.toLowerCase() === teacherData.username.toLowerCase());
     if (exists) {
       return { success: false, error: `Username '${teacherData.username}' is already taken!` };
     }
 
+    const teacherId = teacherData.username || `T${String(teachers.length + 1).padStart(3, '0')}`;
     const newTeacher = {
-      id: `user-teacher-${Date.now()}`,
-      username: teacherData.username,
-      password: teacherData.password,
+      id: teacherId,
+      teacherId: teacherId,
+      username: teacherData.username || teacherId,
+      password: teacherData.password || teacherId,
       name: teacherData.name,
       role: 'teacher',
       avatar: teacherData.avatar || '👨‍🏫',
@@ -1048,6 +1050,7 @@ export function AttendanceProvider({ children }) {
       try {
         const teacherRow = {
           id: newTeacher.id,
+          teacher_id: newTeacher.teacherId,
           username: newTeacher.username,
           password: newTeacher.password,
           name: newTeacher.name,
@@ -1058,10 +1061,20 @@ export function AttendanceProvider({ children }) {
           organization: activeSchool?.name || 'Sunshine International School'
         };
 
-        const { error: gErr } = await supabase.from('teachers').insert(teacherRow);
-        if (gErr) console.warn('Supabase teachers insert notice:', gErr);
+        const { error: gErr } = await supabase.from('teachers').upsert(teacherRow);
+        if (gErr) console.warn('Supabase teachers upsert notice:', gErr);
 
-        showToast(`New Teacher '${newTeacher.name}' onboarded & synced to database!`, 'success');
+        const { error: lErr } = await supabase.from('teachers_login').upsert({
+          id: newTeacher.username,
+          teacher_id: newTeacher.teacherId,
+          full_name: newTeacher.name,
+          username: newTeacher.username,
+          password_hash: newTeacher.password,
+          school_code: activeSchool?.code || 'SCH1'
+        });
+        if (lErr) console.warn('Supabase teachers_login upsert notice:', lErr);
+
+        showToast(`New Teacher '${newTeacher.name}' onboarded & saved to Database!`, 'success');
       } catch (e) {
         console.warn('Supabase onboard teacher error:', e);
         showToast(`New Teacher '${newTeacher.name}' onboarded successfully!`, 'success');

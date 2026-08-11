@@ -26,18 +26,23 @@ export default function OnboardTeacherModal({ onClose }) {
     }
   }, [getNextSequentialId]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     if (!formData.name || !formData.username || !formData.password) {
       setError('Please fill in all required fields.');
       return;
     }
 
-    const result = onboardTeacher(formData);
-    if (result.success) {
-      onClose();
-    } else {
-      setError(result.error || 'Failed to onboard teacher');
+    try {
+      const result = await onboardTeacher(formData);
+      if (result && result.success) {
+        onClose();
+      } else {
+        setError(result?.error || 'Failed to onboard teacher');
+      }
+    } catch (err) {
+      setError('Failed to onboard teacher. Please try again.');
     }
   };
 
