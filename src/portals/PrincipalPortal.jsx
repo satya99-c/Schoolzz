@@ -486,8 +486,21 @@ export default function PrincipalPortal() {
           </div>
 
           {/* Teacher Directory Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {teachers.map(teacher => {
+          {teachers.length === 0 ? (
+            <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-4 shadow-xs">
+              <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto text-2xl font-bold border border-emerald-200">
+                👨‍🏫
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-extrabold text-slate-900">No Teachers Onboarded Yet</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Your school organization doesn't have any onboarded faculty yet. Click "Assign Class to Teacher" or onboard your first teacher to begin.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {teachers.map(teacher => {
               const assignedCount = teacher.assignedClasses ? teacher.assignedClasses.length : 0;
               const classTeacherObj = classes.find(c => 
                 (teacher.classTeacherClassId && c.id === teacher.classTeacherClassId) || 
@@ -597,13 +610,27 @@ export default function PrincipalPortal() {
               );
             })}
           </div>
-        </div>
+        )}
+      </div>
       )}
 
       {/* TAB 3: OVERVIEW ALL CLASSES */}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {classes.map(cls => {
+          {classes.length === 0 ? (
+            <div className="col-span-full bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-4 shadow-xs">
+              <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto text-2xl font-bold border border-emerald-200">
+                🏫
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-extrabold text-slate-900">No Classes Created Yet</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Your school organization doesn't have any class sections created yet. Onboard teachers and assign class sections to get started.
+                </p>
+              </div>
+            </div>
+          ) : (
+            classes.map(cls => {
             const dateStr = getTodayLocalDateStr();
             const sub = submissions[`${cls.id}_${dateStr}`];
 
@@ -633,7 +660,7 @@ export default function PrincipalPortal() {
                 </div>
               </div>
             );
-          })}
+          }))}
         </div>
       )}
 

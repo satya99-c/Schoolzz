@@ -420,6 +420,183 @@ export function AttendanceProvider({ children }) {
     localStorage.setItem('schoolzz_reminders', JSON.stringify(attendanceReminders));
   }, [attendanceReminders]);
 
+  // Dynamic School Data Isolation & Sync
+  // Demo School (SCH1) keeps demo data for testing.
+  // Newly onboarded / non-demo schools start EMPTY until data is created & saved to database.
+  useEffect(() => {
+    if (!activeSchool) return;
+
+    if (activeSchool.code === 'SCH1') {
+      // Demo School SCH1: Retain demo mock data for testing
+      const savedTeachers = localStorage.getItem('schoolzz_teachers');
+      if (savedTeachers) {
+        try {
+          const parsed = JSON.parse(savedTeachers);
+          if (Array.isArray(parsed) && parsed.length > 0) setTeachers(parsed);
+        } catch (e) {}
+      } else {
+        setTeachers(MOCK_USERS.filter(u => u.role === 'teacher'));
+      }
+
+      const savedClasses = localStorage.getItem('schoolzz_classes');
+      if (savedClasses) {
+        try {
+          const parsed = JSON.parse(savedClasses);
+          if (Array.isArray(parsed) && parsed.length > 0) setClasses(parsed);
+        } catch (e) {}
+      } else {
+        setClasses(INITIAL_CLASSES);
+      }
+
+      const savedStudents = localStorage.getItem('schoolzz_students');
+      if (savedStudents) {
+        try {
+          const parsed = JSON.parse(savedStudents);
+          if (parsed && typeof parsed === 'object') setStudents(parsed);
+        } catch (e) {}
+      } else {
+        setStudents(INITIAL_STUDENTS);
+      }
+    } else {
+      // New / Non-Demo School: Fetch school-scoped data from Database / LocalStorage (No default SCH1 demo data!)
+      if (isSupabaseConfigured && supabase) {
+        (async () => {
+          try {
+            // 1. Fetch Teachers for activeSchool
+            const { data: dbTeachers } = await supabase
+              .from('teachers')
+              .select('*')
+              .eq('school_code', activeSchool.code);
+
+            if (dbTeachers && dbTeachers.length > 0) {
+              setTeachers(dbTeachers.map(t => ({
+                id: t.id,
+                teacherId: t.teacher_id || t.id,
+                username: t.username,
+                password: t.password,
+                name: t.name,
+                firstName: t.first_name,
+                lastName: t.last_name,
+                dob: t.dob,
+                gender: t.gender,
+                phone: t.phone,
+                email: t.email,
+                role: t.role || 'teacher',
+                avatar: t.avatar || '👨‍🏫',
+                assignedClasses: t.assigned_classes || [],
+                classTeacherClassId: t.class_teacher_class_id,
+                schoolCode: t.school_code,
+                organization: t.organization
+              })));
+            } else {
+              setTeachers([]);
+            }
+
+            // 2. Fetch Classes for activeSchool
+            const { data: dbClasses } = await supabase
+              .from('classes')
+              .select('*')
+              .eq('school_code', activeSchool.code);
+
+            if (dbClasses && dbClasses.length > 0) {
+              setClasses(dbClasses.map(c => ({
+                id: c.id,
+                name: c.name,
+                shift: c.shift,
+                shiftTime: c.shift_time,
+                grade: c.grade,
+                section: c.section,
+                teacherId: c.teacher_id,
+                classTeacher: c.class_teacher,
+                totalStudents: c.total_students,
+                schoolCode: c.school_code
+              })));
+            } else {
+              setClasses([]);
+            }
+
+            // 3. Fetch Students for activeSchool
+            const { data: dbStudents } = await supabase
+              .from('students')
+              .select('*')
+              .eq('school_code', activeSchool.code);
+
+            if (dbStudents && dbStudents.length > 0) {
+              const groupedStudents = {};
+              dbStudents.forEach(s => {
+                const cId = s.class_id;
+                if (!groupedStudents[cId]) groupedStudents[cId] = [];
+                groupedStudents[cId].push({
+                  rollNo: s.roll_no,
+                  name: s.name,
+                  studentId: s.student_id,
+                  username: s.username,
+                  passcode: s.passcode,
+                  isFirstLogin: s.is_first_login,
+                  gender: s.gender,
+                  dob: s.dob,
+                  photo: s.photo,
+                  parentName: s.parent_name,
+                  parentPhone: s.parent_phone,
+                  classId: s.class_id,
+                  attendancePct: s.attendance_pct || 95,
+                  daysPresent: s.days_present || 24,
+                  daysAbsent: s.days_absent || 0.5,
+                  daysLeave: s.days_leave || 0.5,
+                  documents: s.documents || {},
+                  feeInfo: s.fee_info || {}
+                });
+              });
+              setStudents(groupedStudents);
+            } else {
+              setStudents({});
+            }
+
+            // 4. Fetch Submissions for activeSchool
+            const { data: dbSubmissions } = await supabase
+              .from('submissions')
+              .select('*')
+              .eq('school_code', activeSchool.code);
+
+            if (dbSubmissions && dbSubmissions.length > 0) {
+              const subObj = {};
+              dbSubmissions.forEach(s => {
+                subObj[`${s.class_id}_${s.date}`] = {
+                  id: s.id,
+                  classId: s.class_id,
+                  date: s.date,
+                  records: s.records || [],
+                  stats: s.stats || {},
+                  status: s.status,
+                  teacherName: s.teacher_name
+                };
+              });
+              setSubmissions(subObj);
+            } else {
+              setSubmissions({});
+            }
+
+          } catch (e) {
+            console.warn('Supabase fetch error for school:', e);
+          }
+        })();
+      } else {
+        // LocalStorage fallback for non-SCH1 schools
+        const savedClasses = localStorage.getItem(`schoolzz_classes_${activeSchool.code}`);
+        setClasses(savedClasses ? JSON.parse(savedClasses) : []);
+
+        const savedTeachers = localStorage.getItem(`schoolzz_teachers_${activeSchool.code}`);
+        setTeachers(savedTeachers ? JSON.parse(savedTeachers) : []);
+
+        const savedStudents = localStorage.getItem(`schoolzz_students_${activeSchool.code}`);
+        setStudents(savedStudents ? JSON.parse(savedStudents) : {});
+
+        const savedSubmissions = localStorage.getItem(`schoolzz_submissions_${activeSchool.code}`);
+        setSubmissions(savedSubmissions ? JSON.parse(savedSubmissions) : {});
+      }
+    }
+  }, [activeSchool]);
+
   // Student Exam Marks & Scorecards State
   const [studentMarks, setStudentMarks] = useState(() => {
     const saved = localStorage.getItem('schoolzz_marks');

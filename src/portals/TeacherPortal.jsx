@@ -218,7 +218,20 @@ export default function TeacherPortal() {
 
               {/* Classes Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {assignedClasses.map(cls => {
+                {assignedClasses.length === 0 ? (
+                  <div className="col-span-full bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-4 shadow-xs">
+                    <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto text-2xl font-bold border border-emerald-200">
+                      🏫
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-extrabold text-slate-900">No Assigned Classes Yet</h3>
+                      <p className="text-xs text-slate-500 max-w-md mx-auto">
+                        You do not have any class sections assigned to your teacher profile yet. Please request your Principal to assign class sections to your account.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  assignedClasses.map(cls => {
                   const clsStudents = students[cls.id] || [];
                   const sub = submissions[`${cls.id}_${dateStr}`];
                   const isSubmitted = Boolean(sub);
@@ -290,10 +303,9 @@ export default function TeacherPortal() {
                           <ChevronRight className="w-4 h-4" />
                         </button>
                       </div>
-
                     </div>
                   );
-                })}
+                }))}
               </div>
 
               {/* AUTOMATED ATTENDANCE REMINDERS SCHEDULE & ALERT LOG */}
