@@ -67,6 +67,49 @@ export default function SchoolAdminPortal() {
     setPrincipalPassword(nextPId);
   };
 
+  const handleExportCSVs = () => {
+    const exportCSVFile = (filename, headers, rows) => {
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    // 1. Teachers CSV
+    const tRows = teachers.map(t => [
+      `"${t.id}"`, `"${t.teacherId || t.id}"`, `"${t.username}"`, `"${t.password}"`, `"${t.name}"`,
+      `"${t.firstName || ''}"`, `"${t.lastName || ''}"`, `"${t.dob || ''}"`, `"${t.gender || 'Male'}"`,
+      `"${t.phone || ''}"`, `"${t.email || ''}"`, `"${t.role || 'teacher'}"`, `"${t.avatar || '👨‍🏫'}"`, `"SCH1"`
+    ]);
+    exportCSVFile("teachers.csv", ['id', 'teacher_id', 'username', 'password', 'name', 'first_name', 'last_name', 'dob', 'gender', 'phone', 'email', 'role', 'avatar', 'school_code'], tRows);
+
+    // 2. Classes CSV
+    const cRows = classes.map(c => [
+      `"${c.id}"`, `"${c.name}"`, `"${c.shift}"`, `"${c.shiftTime}"`, `"${c.grade}"`, `"${c.section}"`,
+      `"${c.teacherId || ''}"`, `"${c.classTeacher || ''}"`, `"${c.totalStudents || 15}"`, `"SCH1"`
+    ]);
+    exportCSVFile("classes.csv", ['id', 'name', 'shift', 'shift_time', 'grade', 'section', 'teacher_id', 'class_teacher', 'total_students', 'school_code'], cRows);
+
+    // 3. Students CSV
+    const sRows = [];
+    Object.entries(students).forEach(([cId, stList]) => {
+      stList.forEach(s => {
+        sRows.push([
+          `"${cId}_${s.rollNo}"`, `"S${String(s.rollNo).padStart(3, '0')}"`, `"${cId}"`, `"${s.rollNo}"`, `"${s.name}"`,
+          `"${s.gender || 'Male'}"`, `"2010-05-15"`, `"Parent of ${s.name}"`, `"${s.parentPhone}"`, `"${s.attendancePct || 95}"`,
+          `"${s.daysPresent || 24}"`, `"${s.daysAbsent || 0.5}"`, `"${s.daysLeave || 0.5}"`, `"SCH1"`
+        ]);
+      });
+    });
+    exportCSVFile("students.csv", ['id', 'student_id', 'class_id', 'roll_no', 'name', 'gender', 'dob', 'parent_name', 'parent_phone', 'attendance_pct', 'days_present', 'days_absent', 'days_leave', 'school_code'], sRows);
+
+    showToast('🎉 All Database CSV files exported & downloaded!', 'success');
+  };
+
   return (
     <div className="space-y-6">
       
@@ -87,13 +130,23 @@ export default function SchoolAdminPortal() {
           </p>
         </div>
 
-        <button
-          onClick={handleCopyLink}
-          className="px-4 py-2.5 rounded-2xl bg-white hover:bg-emerald-50 text-[#1b4d3e] font-extrabold text-xs shadow-lg flex items-center space-x-2 transition-all cursor-pointer border border-emerald-300"
-        >
-          <Copy className="w-4 h-4 text-[#1b4d3e]" />
-          <span>Copy Shareable School Link</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleExportCSVs}
+            className="px-4 py-2.5 rounded-2xl bg-emerald-800 hover:bg-emerald-700 text-emerald-100 font-extrabold text-xs shadow-lg flex items-center space-x-2 transition-all cursor-pointer border border-emerald-400/40"
+          >
+            <Download className="w-4 h-4 text-emerald-200" />
+            <span>Export Database CSVs</span>
+          </button>
+
+          <button
+            onClick={handleCopyLink}
+            className="px-4 py-2.5 rounded-2xl bg-white hover:bg-emerald-50 text-[#1b4d3e] font-extrabold text-xs shadow-lg flex items-center space-x-2 transition-all cursor-pointer border border-emerald-300"
+          >
+            <Copy className="w-4 h-4 text-[#1b4d3e]" />
+            <span>Copy Shareable School Link</span>
+          </button>
+        </div>
       </div>
 
       {/* Shareable Link Banner Card */}
