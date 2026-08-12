@@ -6,6 +6,7 @@ import OnboardTeacherModal from '../components/OnboardTeacherModal';
 import CreateClassModal from '../components/CreateClassModal';
 import StudentReportModal from '../subcomponents/StudentReportModal';
 import AssignTeacherModal from '../subcomponents/AssignTeacherModal';
+import AssignClassToTeacherModal from '../subcomponents/AssignClassToTeacherModal';
 import TeacherLeaveModal from '../subcomponents/TeacherLeaveModal';
 import OnboardStudentModal from '../subcomponents/OnboardStudentModal';
 import AcademicScorecardManager from '../subcomponents/AcademicScorecardManager';
@@ -15,6 +16,9 @@ import confetti from 'canvas-confetti';
 export default function PrincipalPortal() {
   const { classes, teachers, students, submissions, approveAttendance, declineAttendance, whatsappLogs, setActiveWhatsAppPreview, leaveApplications = [], approveLeaveApplication, declineLeaveApplication, teacherLeaveRequests = [], approveTeacherLeaveRequest, declineTeacherLeaveRequest, attendanceReminders = [], triggerManualReminder, studentMarks, studentFees = {}, showToast, activeSchool } = useAttendance();
   const [activeTab, setActiveTab] = useState('approvals'); // 'approvals' | 'overview' | 'manage' | 'whatsapp' | 'scorecards' | 'fees'
+
+  // Modal State for Assign Class to Teacher
+  const [showAssignClassToTeacherModal, setShowAssignClassToTeacherModal] = useState(false);
 
   // Student Onboarding State
   const [showOnboardStudentModal, setShowOnboardStudentModal] = useState(false);
@@ -96,26 +100,6 @@ export default function PrincipalPortal() {
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-white">School Attendance & Faculty Oversight</h1>
             <p className="text-xs text-emerald-100/90 mt-1">Manage faculty onboarding, create classes with teacher occupancy checks, approve attendance & view reports</p>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            {/* Onboard Teacher Button */}
-            <button
-              onClick={() => setShowOnboardModal(true)}
-              className="px-3.5 py-2 rounded-xl bg-emerald-800/90 text-white hover:bg-emerald-700 border border-emerald-400/40 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm cursor-pointer"
-            >
-              <UserPlus className="w-4 h-4 text-emerald-200" />
-              <span>+ Onboard Teacher</span>
-            </button>
-
-            {/* Create Class Button */}
-            <button
-              onClick={() => setShowCreateClassModal(true)}
-              className="px-4 py-2 rounded-xl bg-white text-[#1b4d3e] text-xs font-black shadow-md hover:bg-emerald-50 transition-all flex items-center space-x-1.5 cursor-pointer"
-            >
-              <PlusCircle className="w-4 h-4 text-[#1b4d3e]" />
-              <span>+ Create Class</span>
-            </button>
           </div>
         </div>
       </div>
@@ -492,11 +476,11 @@ export default function PrincipalPortal() {
 
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setShowCreateClassModal(true)}
-                className="px-4 py-2 rounded-xl bg-emerald-100 text-[#1b4d3e] border border-emerald-300 hover:bg-emerald-200 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm cursor-pointer"
+                onClick={() => setShowAssignClassToTeacherModal(true)}
+                className="px-4 py-2.5 rounded-xl bg-[#1b4d3e] hover:bg-[#143c30] text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-md cursor-pointer"
               >
-                <PlusCircle className="w-4 h-4" />
-                <span>+ Create Class & Add 15 Students</span>
+                <UserCheck className="w-4 h-4 text-emerald-200" />
+                <span>Assign Class to Teacher</span>
               </button>
             </div>
           </div>
@@ -1224,6 +1208,13 @@ export default function PrincipalPortal() {
       {showOnboardStudentModal && (
         <OnboardStudentModal
           onClose={() => setShowOnboardStudentModal(false)}
+        />
+      )}
+
+      {/* ASSIGN CLASS TO TEACHER MODAL */}
+      {showAssignClassToTeacherModal && (
+        <AssignClassToTeacherModal
+          onClose={() => setShowAssignClassToTeacherModal(false)}
         />
       )}
 
