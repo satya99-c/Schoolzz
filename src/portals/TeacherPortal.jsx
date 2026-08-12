@@ -9,7 +9,7 @@ import TeacherApplyLeaveModal from '../subcomponents/TeacherApplyLeaveModal';
 import { School, Play, CheckCircle2, Clock, Users, UserCheck, ChevronRight, BarChart3, Sun, Moon, Award, BookOpen, FileCheck, ArrowLeft, PlusCircle, FileText, Calendar, CreditCard, Send, Download, Search } from 'lucide-react';
 
 export default function TeacherPortal() {
-  const { classes, students, activeClassId, setActiveClassId, submitTeacherAttendance, submissions, currentUser, studentMarks, studentFees = {}, substituteAssignments = [], examRosters = [], createExamRoster, showToast } = useAttendance();
+  const { classes, students, activeClassId, setActiveClassId, submitTeacherAttendance, submissions, currentUser, studentMarks, studentFees = {}, substituteAssignments = [], cancelSubstituteAssignment, examRosters = [], createExamRoster, showToast } = useAttendance();
 
   // Top Section Navigation: 'attendance' | 'reports' | 'marks'
   const [activeTab, setActiveTab] = useState('attendance');
@@ -172,14 +172,27 @@ export default function TeacherPortal() {
               
               {/* Approved Leave Notice Banner */}
               {myLeaveAssignments.length > 0 && (
-                <div className="bg-amber-50 border border-amber-300 p-4.5 rounded-3xl flex items-start space-x-3 text-xs text-amber-900 shadow-sm">
-                  <Calendar className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-extrabold text-sm block">🏖️ Approved Leave Notice</span>
-                    <span>
-                      You are currently on approved leave. Covered by <strong>{myLeaveAssignments.map(a => `${a.substituteTeacherName} for ${a.className} (${a.startDate} to ${a.endDate})`).join(', ')}</strong>.
-                    </span>
+                <div className="bg-amber-50 border border-amber-300 p-4.5 rounded-3xl flex items-center justify-between gap-4 text-xs text-amber-900 shadow-sm">
+                  <div className="flex items-start space-x-3">
+                    <Calendar className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-extrabold text-sm block">🏖️ Approved Leave Notice</span>
+                      <span>
+                        You are currently listed on leave for today. Covered by <strong>{myLeaveAssignments.map(a => `${a.substituteTeacherName} for ${a.className} (${a.startDate} to ${a.endDate})`).join(', ')}</strong>.
+                      </span>
+                    </div>
                   </div>
+                  {cancelSubstituteAssignment && (
+                    <button
+                      onClick={() => {
+                        myLeaveAssignments.forEach(a => cancelSubstituteAssignment(a.id));
+                        showToast('Leave status cleared! You are active for class duty.', 'success');
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold text-xs transition-all border border-amber-400 shrink-0 cursor-pointer shadow-xs"
+                    >
+                      Resume Duty / Clear Notice
+                    </button>
+                  )}
                 </div>
               )}
 
