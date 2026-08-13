@@ -81,16 +81,26 @@ export default function OnboardStudentModal({ onClose }) {
     }
   }, [classes, students]);
 
-  // New Class Section Fields with Grade Level Lookup & Write Access
-  const gradeOptions = ['Class 10', 'Class 9', 'Class 8', 'Class 7', 'Class 6', 'Class 5'];
+  // New Class Section Writable Combobox Fields
   const [targetGrade, setTargetGrade] = useState('Class 9');
   const [selectedSectionLetter, setSelectedSectionLetter] = useState('Section A');
-  const [isCustomGrade, setIsCustomGrade] = useState(false);
-  const [isCustomSection, setIsCustomSection] = useState(false);
+  const [showGradeDropdown, setShowGradeDropdown] = useState(false);
+  const [showSectionDropdown, setShowSectionDropdown] = useState(false);
+
+  const allGradeSuggestions = Array.from(new Set([
+    'Class 10', 'Class 9', 'Class 8', 'Class 7', 'Class 6', 'Class 5',
+    'Class 11', 'Class 12', 'UKG', 'LKG', 'Nursery',
+    ...classes.map(c => c.name.split(' - ')[0])
+  ]));
+
+  const allSectionSuggestions = [
+    'Section A', 'Section B', 'Section C', 'Section D', 'Section E', 'Section F', 'Section G',
+    'Rose', 'Lotus', 'Alpha', 'Beta'
+  ];
 
   // Find existing section names for selected grade (e.g. ['Class 9 - Section A', 'Class 9 - Section B'])
   const existingGradeClasses = classes.filter(c => 
-    c.name.toLowerCase().includes(targetGrade.toLowerCase())
+    targetGrade && c.name.toLowerCase().includes(targetGrade.toLowerCase())
   );
   const existingSectionNames = existingGradeClasses.map(c => c.name);
 
@@ -105,15 +115,15 @@ export default function OnboardStudentModal({ onClose }) {
     return `Section ${existingList.length + 1}`;
   };
 
-  // Update suggested section letter whenever targetGrade changes (only if not manually typing custom section)
+  // Update suggested section letter whenever targetGrade changes
   useEffect(() => {
-    if (!isCustomSection) {
+    if (targetGrade) {
       const currentExisting = classes
         .filter(c => c.name.toLowerCase().includes(targetGrade.toLowerCase()))
         .map(c => c.name);
       setSelectedSectionLetter(getSuggestedSection(currentExisting));
     }
-  }, [targetGrade, classes, isCustomSection]);
+  }, [targetGrade, classes]);
 
   const fullNewClassName = `${targetGrade.trim()} - ${selectedSectionLetter.trim()}`;
 
@@ -552,90 +562,125 @@ export default function OnboardStudentModal({ onClose }) {
                     )}
                   </div>
 
-                  {/* Section Controls with Write Access & Dropdown Options */}
+                  {/* Section Controls with Writable Combobox & Filtered Dropdown */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Class / Grade Level Control */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold text-slate-700">Class / Grade Level *</label>
-                        <button
-                          type="button"
-                          onClick={() => setIsCustomGrade(!isCustomGrade)}
-                          className="text-[11px] font-bold text-[#1b4d3e] hover:underline flex items-center space-x-1 cursor-pointer"
-                        >
-                          <span>{isCustomGrade ? '📋 Select from List' : '✏️ Type Custom Class'}</span>
-                        </button>
-                      </div>
-
-                      {isCustomGrade ? (
+                    {/* Class / Grade Level Writable Dropdown */}
+                    <div className="relative">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Class / Grade Level * <span className="text-[10px] font-normal text-slate-500">(Type or select from dropdown)</span>
+                      </label>
+                      <div className="relative">
                         <input
                           type="text"
                           value={targetGrade}
-                          onChange={(e) => setTargetGrade(e.target.value)}
-                          placeholder="e.g. Class 11, UKG, Grade 12"
-                          className="w-full bg-white border border-emerald-500 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e] shadow-2xs"
-                        />
-                      ) : (
-                        <select
-                          value={targetGrade}
+                          onFocus={() => setShowGradeDropdown(true)}
                           onChange={(e) => {
-                            if (e.target.value === '__custom__') {
-                              setIsCustomGrade(true);
-                            } else {
-                              setTargetGrade(e.target.value);
-                            }
+                            setTargetGrade(e.target.value);
+                            setShowGradeDropdown(true);
                           }}
-                          className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                          placeholder="Type or select class (e.g. Class 9, Class 11)"
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e] focus:ring-1 focus:ring-[#1b4d3e] shadow-2xs pr-9"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowGradeDropdown(!showGradeDropdown)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer p-1"
                         >
-                          {gradeOptions.map(g => (
-                            <option key={g} value={g}>{g}</option>
-                          ))}
-                          <option value="__custom__">✏️ Type Custom Class Name...</option>
-                        </select>
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Dropdown Options Popup */}
+                      {showGradeDropdown && (
+                        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl z-30 max-h-48 overflow-y-auto p-1.5 space-y-1">
+                          {allGradeSuggestions
+                            .filter(g => g.toLowerCase().includes((targetGrade || '').toLowerCase()))
+                            .map(g => (
+                              <div
+                                key={g}
+                                onClick={() => {
+                                  setTargetGrade(g);
+                                  setShowGradeDropdown(false);
+                                }}
+                                className={`px-3 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-between ${
+                                  targetGrade === g ? 'bg-emerald-50 text-[#1b4d3e]' : 'hover:bg-slate-100 text-slate-800'
+                                }`}
+                              >
+                                <span>{g}</span>
+                                {targetGrade === g && <Check className="w-3.5 h-3.5 text-[#1b4d3e]" />}
+                              </div>
+                            ))}
+
+                          {targetGrade && !allGradeSuggestions.some(g => g.toLowerCase() === targetGrade.toLowerCase()) && (
+                            <div
+                              onClick={() => setShowGradeDropdown(false)}
+                              className="px-3 py-2 bg-emerald-50 text-[#1b4d3e] rounded-xl text-xs font-black border border-emerald-300 cursor-pointer flex items-center justify-between"
+                            >
+                              <span>✨ Create New Class: "{targetGrade}"</span>
+                              <Check className="w-3.5 h-3.5 text-[#1b4d3e]" />
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
 
-                    {/* Section Name / Letter Control */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold text-slate-700">Section Letter / Name *</label>
-                        <button
-                          type="button"
-                          onClick={() => setIsCustomSection(!isCustomSection)}
-                          className="text-[11px] font-bold text-[#1b4d3e] hover:underline flex items-center space-x-1 cursor-pointer"
-                        >
-                          <span>{isCustomSection ? '📋 Select from List' : '✏️ Type Custom Section'}</span>
-                        </button>
-                      </div>
-
-                      {isCustomSection ? (
+                    {/* Section Letter / Name Writable Dropdown */}
+                    <div className="relative">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Section Letter / Name * <span className="text-[10px] font-normal text-slate-500">(Type or select from dropdown)</span>
+                      </label>
+                      <div className="relative">
                         <input
                           type="text"
                           value={selectedSectionLetter}
-                          onChange={(e) => setSelectedSectionLetter(e.target.value)}
-                          placeholder="e.g. Section F, Rose, Beta"
-                          className="w-full bg-white border border-emerald-500 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e] shadow-2xs"
-                        />
-                      ) : (
-                        <select
-                          value={selectedSectionLetter}
+                          onFocus={() => setShowSectionDropdown(true)}
                           onChange={(e) => {
-                            if (e.target.value === '__custom__') {
-                              setIsCustomSection(true);
-                            } else {
-                              setSelectedSectionLetter(e.target.value);
-                            }
+                            setSelectedSectionLetter(e.target.value);
+                            setShowSectionDropdown(true);
                           }}
-                          className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                          placeholder="Type or select section (e.g. Section A, Rose)"
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e] focus:ring-1 focus:ring-[#1b4d3e] shadow-2xs pr-9"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSectionDropdown(!showSectionDropdown)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer p-1"
                         >
-                          <option value="Section A">Section A</option>
-                          <option value="Section B">Section B</option>
-                          <option value="Section C">Section C</option>
-                          <option value="Section D">Section D</option>
-                          <option value="Section E">Section E</option>
-                          <option value="Section F">Section F</option>
-                          <option value="__custom__">✏️ Type Custom Section Name...</option>
-                        </select>
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Dropdown Options Popup */}
+                      {showSectionDropdown && (
+                        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl z-30 max-h-48 overflow-y-auto p-1.5 space-y-1">
+                          {allSectionSuggestions
+                            .filter(s => s.toLowerCase().includes((selectedSectionLetter || '').toLowerCase()))
+                            .map(s => (
+                              <div
+                                key={s}
+                                onClick={() => {
+                                  setSelectedSectionLetter(s);
+                                  setShowSectionDropdown(false);
+                                }}
+                                className={`px-3 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-between ${
+                                  selectedSectionLetter === s ? 'bg-emerald-50 text-[#1b4d3e]' : 'hover:bg-slate-100 text-slate-800'
+                                }`}
+                              >
+                                <span>{s}</span>
+                                {selectedSectionLetter === s && <Check className="w-3.5 h-3.5 text-[#1b4d3e]" />}
+                              </div>
+                            ))}
+
+                          {selectedSectionLetter && !allSectionSuggestions.some(s => s.toLowerCase() === selectedSectionLetter.toLowerCase()) && (
+                            <div
+                              onClick={() => setShowSectionDropdown(false)}
+                              className="px-3 py-2 bg-emerald-50 text-[#1b4d3e] rounded-xl text-xs font-black border border-emerald-300 cursor-pointer flex items-center justify-between"
+                            >
+                              <span>✨ Create New Section: "{selectedSectionLetter}"</span>
+                              <Check className="w-3.5 h-3.5 text-[#1b4d3e]" />
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
