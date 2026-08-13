@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Upload, ShieldCheck, CheckCircle2, DollarSign, School, FileText, PlusCircle, ArrowLeft, ArrowRight, Check, AlertTriangle } from 'lucide-react';
+import { X, UserPlus, Upload, ShieldCheck, CheckCircle2, DollarSign, School, FileText, PlusCircle, ArrowLeft, ArrowRight, Check, AlertTriangle, ChevronDown } from 'lucide-react';
 import { useAttendance } from '../context/AttendanceContext';
 
 export default function OnboardStudentModal({ onClose }) {
