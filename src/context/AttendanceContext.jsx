@@ -1406,162 +1406,168 @@ export function AttendanceProvider({ children }) {
 
   // ONBOARD SINGLE NEW STUDENT (PERSISTS TO DATABASE TABLES)
   const onboardStudent = async (targetClassId, newStudentObj) => {
+    const currentSchoolCode = activeSchool?.code || 'SCH1';
+    
+    // Ensure student object has schoolCode
+    const studentWithSchool = {
+      ...newStudentObj,
+      schoolCode: currentSchoolCode,
+      school_code: currentSchoolCode
+    };
+
     setStudents(prev => {
       const currentList = prev[targetClassId] || [];
-      const updatedList = [...currentList, newStudentObj];
+      const updatedList = [...currentList, studentWithSchool];
       const nextState = { ...prev, [targetClassId]: updatedList };
       try {
+        localStorage.setItem(`schoolzz_students_${currentSchoolCode}`, JSON.stringify(nextState));
         localStorage.setItem('schoolzz_students', JSON.stringify(nextState));
       } catch (e) {}
       return nextState;
     });
 
+    // Also update totalStudents count in the target class
+    setClasses(prev => prev.map(c => {
+      if (c.id === targetClassId) {
+        const count = ((students[targetClassId] || []).length) + 1;
+        return { ...c, totalStudents: count, schoolCode: currentSchoolCode };
+      }
+      return c;
+    }));
+
     if (isSupabaseConfigured && supabase) {
       try {
         const studentRow = {
-          id: `${targetClassId}_${newStudentObj.studentId || newStudentObj.rollNo}`,
-          student_id: newStudentObj.studentId,
-          username: newStudentObj.username,
-          passcode: newStudentObj.passcode,
-          is_first_login: newStudentObj.isFirstLogin !== false,
-          roll_no: newStudentObj.rollNo,
-          name: newStudentObj.name,
-          gender: newStudentObj.gender,
-          dob: newStudentObj.dob,
-          parent_name: newStudentObj.parentName,
-          parent_phone: newStudentObj.parentPhone,
+          id: `${targetClassId}_${studentWithSchool.studentId || studentWithSchool.rollNo}`,
+          student_id: studentWithSchool.studentId,
+          username: studentWithSchool.username,
+          passcode: studentWithSchool.passcode,
+          is_first_login: studentWithSchool.isFirstLogin !== false,
+          roll_no: studentWithSchool.rollNo,
+          name: studentWithSchool.name,
+          gender: studentWithSchool.gender,
+          dob: studentWithSchool.dob,
+          parent_name: studentWithSchool.parentName,
+          parent_phone: studentWithSchool.parentPhone,
           class_id: targetClassId,
-          school_code: activeSchool?.code || 'SCH1',
-          documents: newStudentObj.documents || {},
-          fee_info: newStudentObj.feeInfo || {}
+          school_code: currentSchoolCode,
+          documents: studentWithSchool.documents || {},
+          fee_info: studentWithSchool.feeInfo || {}
         };
         await supabase.from('students').upsert(studentRow);
 
-        if (newStudentObj.studentId) {
+        if (studentWithSchool.studentId) {
           await supabase.from('students_login').upsert({
-            id: newStudentObj.studentId,
-            student_id: newStudentObj.studentId,
-            full_name: newStudentObj.name,
-            username: newStudentObj.username,
-            password_hash: newStudentObj.passcode,
-            school_code: activeSchool?.code || 'SCH1',
-            is_first_login: newStudentObj.isFirstLogin !== false
+            id: studentWithSchool.studentId,
+            student_id: studentWithSchool.studentId,
+            full_name: studentWithSchool.name,
+            username: studentWithSchool.username,
+            password_hash: studentWithSchool.passcode,
+            school_code: currentSchoolCode,
+            is_first_login: studentWithSchool.isFirstLogin !== false
           });
         }
 
-        if (newStudentObj.feeInfo) {
+        if (studentWithSchool.feeInfo) {
           await supabase.from('student_fees').upsert({
-            id: `fee_${targetClassId}_${newStudentObj.rollNo}`,
+            id: `fee_${targetClassId}_${studentWithSchool.rollNo}`,
             class_id: targetClassId,
-            roll_no: newStudentObj.rollNo,
-            total_fee: newStudentObj.feeInfo.totalFee,
-            discount_amount: newStudentObj.feeInfo.discountAmount,
-            net_fee: newStudentObj.feeInfo.netFee,
-            status: newStudentObj.feeInfo.status,
-            school_code: activeSchool?.code || 'SCH1'
+            roll_no: studentWithSchool.rollNo,
+            total_fee: studentWithSchool.feeInfo.totalFee,
+            discount_amount: studentWithSchool.feeInfo.discountAmount,
+            net_fee: studentWithSchool.feeInfo.netFee,
+            status: studentWithSchool.feeInfo.status,
+            school_code: currentSchoolCode
           });
         }
-        showToast(`🎉 Student ${newStudentObj.name} onboarded & saved to Database Tables!`, 'success');
+        showToast(`🎉 Student ${studentWithSchool.name} onboarded & saved to Database!`, 'success');
       } catch (err) {
         console.warn('Supabase student persistence warning:', err);
-        showToast(`🎉 Student ${newStudentObj.name} onboarded!`, 'success');
+        showToast(`🎉 Student ${studentWithSchool.name} onboarded!`, 'success');
       }
     } else {
-      showToast(`🎉 Student ${newStudentObj.name} onboarded!`, 'success');
+      showToast(`🎉 Student ${studentWithSchool.name} onboarded!`, 'success');
     }
   };
 
   // CREATE NEW CLASS AND ASSIGN STUDENTS + TEACHER (WITH OCCUPANCY CHECK)
-  const createClassAndStudents = async (classData, studentList) => {
-    const targetTeacher = teachers.find(t => t.id === classData.teacherId);
-    if (!targetTeacher) {
-      return { success: false, error: 'Please select a valid teacher.' };
-    }
+  const createClassAndStudents = async (classData, studentList = []) => {
+    let cName = typeof classData === 'string' ? classData : classData.name;
+    let cShift = typeof classData === 'object' ? (classData.shift || 'Morning Shift') : 'Morning Shift';
+    let cShiftTime = typeof classData === 'object' ? (classData.shiftTime || '8:00 AM - 2:00 PM') : '8:00 AM - 2:00 PM';
+    let cGrade = typeof classData === 'object' ? classData.grade : '';
+    let cSection = typeof classData === 'object' ? classData.section : '';
+    let tId = typeof classData === 'object' ? classData.teacherId : null;
 
-    if (targetTeacher.assignedClasses && targetTeacher.assignedClasses.length >= 2) {
-      return {
-        success: false,
-        error: `Teacher '${targetTeacher.name}' is already assigned to max 2 classes for attendance!`
-      };
-    }
-
-    const classId = `${classData.name.replace(/\s+/g, '')}_${classData.shift.split(' ')[0].toLowerCase()}`;
-    const currentAssigned = targetTeacher.assignedClasses || [];
-    const updatedAssignedClasses = currentAssigned.includes(classId) ? currentAssigned : [...currentAssigned, classId].slice(0, 2);
+    const targetTeacher = tId ? teachers.find(t => t.id === tId) : null;
+    const currentSchoolCode = activeSchool?.code || 'SCH1';
+    const classId = `${cName.replace(/[^a-zA-Z0-9]/g, '')}_${cShift.split(' ')[0].toLowerCase()}`;
 
     const newClassObj = {
       id: classId,
-      name: classData.name,
-      shift: classData.shift,
-      shiftTime: classData.shiftTime,
-      grade: classData.grade,
-      section: classData.section,
-      teacherId: targetTeacher.id,
-      classTeacher: targetTeacher.name,
-      totalStudents: studentList.length
+      name: cName,
+      shift: cShift,
+      shiftTime: cShiftTime,
+      grade: cGrade,
+      section: cSection,
+      teacherId: targetTeacher?.id || 'unassigned',
+      classTeacher: targetTeacher?.name || 'Unassigned Teacher',
+      totalStudents: Array.isArray(studentList) ? studentList.length : 1,
+      schoolCode: currentSchoolCode,
+      school_code: currentSchoolCode
     };
 
-    setClasses(prev => [...prev, newClassObj]);
+    setClasses(prev => {
+      const exists = prev.some(c => c.id === classId);
+      const updated = exists ? prev.map(c => c.id === classId ? { ...c, ...newClassObj } : c) : [...prev, newClassObj];
+      try {
+        localStorage.setItem(`schoolzz_classes_${currentSchoolCode}`, JSON.stringify(updated));
+        localStorage.setItem('schoolzz_classes', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
 
-    setStudents(prev => ({
-      ...prev,
-      [classId]: studentList
-    }));
+    if (Array.isArray(studentList) && studentList.length > 0) {
+      setStudents(prev => ({
+        ...prev,
+        [classId]: studentList
+      }));
+    }
 
-    setTeachers(prev => prev.map(t => {
-      if (t.id === targetTeacher.id) {
-        return {
-          ...t,
-          classTeacherClassId: classId,
-          assignedClasses: updatedAssignedClasses
-        };
-      }
-      return t;
-    }));
+    if (targetTeacher) {
+      const currentAssigned = targetTeacher.assignedClasses || [];
+      const updatedAssignedClasses = currentAssigned.includes(classId) ? currentAssigned : [...currentAssigned, classId].slice(0, 2);
+
+      setTeachers(prev => prev.map(t => {
+        if (t.id === targetTeacher.id) {
+          return {
+            ...t,
+            classTeacherClassId: classId,
+            assignedClasses: updatedAssignedClasses
+          };
+        }
+        return t;
+      }));
+    }
 
     if (isSupabaseConfigured && supabase) {
       try {
         await supabase.from('classes').upsert({
           id: classId,
-          name: classData.name,
-          shift: classData.shift,
-          shift_time: classData.shiftTime,
-          class_teacher: targetTeacher.name,
-          total_students: studentList.length,
-          school_code: activeSchool?.code || 'SCH1',
-          organization: activeSchool?.name || 'Sunshine International School'
+          name: cName,
+          shift: cShift,
+          shift_time: cShiftTime,
+          class_teacher: targetTeacher?.name || 'Unassigned Teacher',
+          total_students: Array.isArray(studentList) ? studentList.length : 1,
+          school_code: currentSchoolCode,
+          organization: activeSchool?.name || 'School Organization'
         });
-
-        const supabaseStudentRows = studentList.map(s => ({
-          class_id: classId,
-          roll_no: s.rollNo,
-          name: s.name,
-          gender: s.gender,
-          photo: s.photo,
-          parent_phone: s.parentPhone,
-          attendance_pct: s.attendancePct || 90,
-          days_present: s.daysPresent || 23,
-          days_absent: s.daysAbsent || 1.5,
-          days_leave: s.daysLeave || 0.5,
-          school_code: activeSchool?.code || 'SCH1',
-          organization: activeSchool?.name || 'Sunshine International School'
-        }));
-
-        await supabase.from('students').insert(supabaseStudentRows);
-
-        await supabase.from('teachers').update({
-          assigned_classes: updatedAssignedClasses
-        }).eq('id', targetTeacher.id);
-
-        showToast(`Class '${classData.name}' with ${studentList.length} students saved to database!`, 'success');
       } catch (e) {
         console.warn('Supabase create class error:', e);
       }
-    } else {
-      showToast(`Class '${classData.name}' with ${studentList.length} students created & assigned to ${targetTeacher.name}!`, 'success');
     }
 
-    return { success: true };
+    return newClassObj;
   };
 
   // Assign Teacher as Class Teacher for Academic Marks & Scorecards (1 Teacher : 1 Class Section as Class Teacher)

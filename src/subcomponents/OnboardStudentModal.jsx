@@ -138,7 +138,7 @@ export default function OnboardStudentModal({ onClose }) {
     setCurrentStep(4);
   };
 
-  const handleSubmitFinal = (e) => {
+  const handleSubmitFinal = async (e) => {
     e.preventDefault();
 
     let targetClassId = selectedClassId;
@@ -146,7 +146,13 @@ export default function OnboardStudentModal({ onClose }) {
 
     if (classMode === 'new_section') {
       // Create new class section in context & local storage
-      const createdCls = createClassAndStudents(fullNewClassName, 'Morning Section');
+      const createdCls = await createClassAndStudents({
+        name: fullNewClassName,
+        shift: 'Morning Shift (8:00 AM - 2:00 PM)',
+        shiftTime: '8:00 AM - 2:00 PM',
+        grade: targetGrade,
+        section: selectedSectionLetter
+      }, []);
       targetClassId = createdCls.id;
       targetClassName = createdCls.name;
     } else {
@@ -436,6 +442,23 @@ export default function OnboardStudentModal({ onClose }) {
                         );
                       })}
                     </select>
+                  ) : classes.length === 0 ? (
+                    <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl text-emerald-950 text-xs font-bold space-y-2">
+                      <div className="flex items-center space-x-1.5 text-[#1b4d3e] text-sm font-black">
+                        <School className="w-4.5 h-4.5 text-[#1b4d3e]" />
+                        <span>No Existing Class Sections Created Yet</span>
+                      </div>
+                      <p className="text-[11px] text-emerald-900 font-medium">
+                        Your school organization has no existing class sections yet. Please select <strong>"+ Create New Class Section"</strong> above to create the first section for this student.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setClassMode('new_section')}
+                        className="px-3.5 py-1.5 bg-[#1b4d3e] text-white hover:bg-[#143c30] rounded-xl font-bold transition-all shadow-2xs cursor-pointer"
+                      >
+                        + Create First Class Section
+                      </button>
+                    </div>
                   ) : (
                     <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl text-amber-900 text-xs font-bold space-y-2">
                       <div className="flex items-center space-x-1.5 text-amber-900 text-sm font-black">
