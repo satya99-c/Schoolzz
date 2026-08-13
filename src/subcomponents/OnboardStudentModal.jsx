@@ -22,7 +22,29 @@ export default function OnboardStudentModal({ onClose }) {
   const [gender, setGender] = useState('Male');
   const [dob, setDob] = useState('2014-05-15');
   const [parentName, setParentName] = useState('');
-  const [parentPhone, setParentPhone] = useState('');
+  const [parentPhone, setParentPhone] = useState('9133190899'); // Default 10-digit number without +91 prefix
+
+  // Handle DOB change with strict 4-digit year limit
+  const handleDobChange = (e) => {
+    const val = e.target.value;
+    if (!val) {
+      setDob('');
+      return;
+    }
+    const parts = val.split('-');
+    if (parts[0] && parts[0].length > 4) {
+      parts[0] = parts[0].slice(0, 4);
+      setDob(parts.join('-'));
+    } else {
+      setDob(val);
+    }
+  };
+
+  // Handle Parent Phone change with strict 10-digit numeric constraint
+  const handleParentPhoneChange = (e) => {
+    const digitsOnly = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+    setParentPhone(digitsOnly);
+  };
 
   // CAPACITY RULE: Filter classes that are NOT FULL (capacity < 15 students)
   const availableNonFullClasses = classes.filter(c => {
@@ -59,9 +81,12 @@ export default function OnboardStudentModal({ onClose }) {
     }
   }, [classes, students]);
 
-  // New Class Section Fields with Grade Level Lookup
+  // New Class Section Fields with Grade Level Lookup & Write Access
   const gradeOptions = ['Class 10', 'Class 9', 'Class 8', 'Class 7', 'Class 6', 'Class 5'];
   const [targetGrade, setTargetGrade] = useState('Class 9');
+  const [selectedSectionLetter, setSelectedSectionLetter] = useState('Section A');
+  const [isCustomGrade, setIsCustomGrade] = useState(false);
+  const [isCustomSection, setIsCustomSection] = useState(false);
 
   // Find existing section names for selected grade (e.g. ['Class 9 - Section A', 'Class 9 - Section B'])
   const existingGradeClasses = classes.filter(c => 
@@ -80,17 +105,17 @@ export default function OnboardStudentModal({ onClose }) {
     return `Section ${existingList.length + 1}`;
   };
 
-  const [selectedSectionLetter, setSelectedSectionLetter] = useState(getSuggestedSection(existingSectionNames));
-
-  // Update suggested section letter whenever targetGrade changes
+  // Update suggested section letter whenever targetGrade changes (only if not manually typing custom section)
   useEffect(() => {
-    const currentExisting = classes
-      .filter(c => c.name.toLowerCase().includes(targetGrade.toLowerCase()))
-      .map(c => c.name);
-    setSelectedSectionLetter(getSuggestedSection(currentExisting));
-  }, [targetGrade, classes]);
+    if (!isCustomSection) {
+      const currentExisting = classes
+        .filter(c => c.name.toLowerCase().includes(targetGrade.toLowerCase()))
+        .map(c => c.name);
+      setSelectedSectionLetter(getSuggestedSection(currentExisting));
+    }
+  }, [targetGrade, classes, isCustomSection]);
 
-  const fullNewClassName = `${targetGrade} - ${selectedSectionLetter}`;
+  const fullNewClassName = `${targetGrade.trim()} - ${selectedSectionLetter.trim()}`;
 
   // STEP 3: Financial & Fee Structure
   const [totalFee, setTotalFee] = useState(45000);
@@ -113,10 +138,21 @@ export default function OnboardStudentModal({ onClose }) {
     if (file) setTcName(file.name);
   };
 
-  // Step Navigation Handlers
+  // Step Navigation Handlers with Strict Validations
   const handleNextStep1 = () => {
     if (!studentName.trim()) {
       showToast('Please enter the student full name.', 'error');
+      return;
+    }
+    if (dob) {
+      const year = dob.split('-')[0];
+      if (!year || year.length !== 4 || Number(year) < 1900 || Number(year) > 2099) {
+        showToast('Please enter a valid 4-digit birth year (e.g. 2014).', 'error');
+        return;
+      }
+    }
+    if (!parentPhone || parentPhone.length !== 10) {
+      showToast('Parent contact mobile number must be mandatory 10 digits (e.g. 9133190899).', 'error');
       return;
     }
     setCurrentStep(2);
@@ -182,7 +218,7 @@ export default function OnboardStudentModal({ onClose }) {
       gender,
       dob,
       parentName: parentName || 'Guardian',
-      parentPhone: parentPhone || '+91 98765 43210',
+      parentPhone: parentPhone ? (parentPhone.startsWith('+91') ? parentPhone : `+91 ${parentPhone}`) : '+91 9133190899',
       documents: {
         photo: photoName || 'student_photo.jpg',
         tc: tcName || 'birth_certificate.pdf'
@@ -344,11 +380,13 @@ export default function OnboardStudentModal({ onClose }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Date of Birth</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Date of Birth * (4-Digit Birth Year)</label>
                   <input
                     type="date"
+                    min="1900-01-01"
+                    max="2099-12-31"
                     value={dob}
-                    onChange={(e) => setDob(e.target.value)}
+                    onChange={handleDobChange}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
                   />
                 </div>
@@ -365,14 +403,20 @@ export default function OnboardStudentModal({ onClose }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Parent Contact Mobile</label>
-                  <input
-                    type="text"
-                    value={parentPhone}
-                    onChange={(e) => setParentPhone(e.target.value)}
-                    placeholder="+91 98765 43210"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                  />
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Parent Contact Mobile * (10 Digits)</label>
+                  <div className="flex items-center rounded-xl border border-slate-300 bg-slate-50 overflow-hidden focus-within:border-[#1b4d3e] focus-within:ring-1 focus-within:ring-[#1b4d3e]">
+                    <span className="bg-slate-200 text-slate-800 text-xs font-black px-3 py-2.5 border-r border-slate-300 shrink-0 select-none">
+                      +91
+                    </span>
+                    <input
+                      type="text"
+                      maxLength={10}
+                      value={parentPhone}
+                      onChange={handleParentPhoneChange}
+                      placeholder="9133190899"
+                      className="w-full bg-transparent px-3.5 py-2.5 text-xs font-bold font-mono text-slate-900 focus:outline-none"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -508,34 +552,91 @@ export default function OnboardStudentModal({ onClose }) {
                     )}
                   </div>
 
-                  {/* Section Controls */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Section Controls with Write Access & Dropdown Options */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Class / Grade Level Control */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Select Grade Level *</label>
-                      <select
-                        value={targetGrade}
-                        onChange={(e) => setTargetGrade(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                      >
-                        {gradeOptions.map(g => (
-                          <option key={g} value={g}>{g}</option>
-                        ))}
-                      </select>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700">Class / Grade Level *</label>
+                        <button
+                          type="button"
+                          onClick={() => setIsCustomGrade(!isCustomGrade)}
+                          className="text-[11px] font-bold text-[#1b4d3e] hover:underline flex items-center space-x-1 cursor-pointer"
+                        >
+                          <span>{isCustomGrade ? '📋 Select from List' : '✏️ Type Custom Class'}</span>
+                        </button>
+                      </div>
+
+                      {isCustomGrade ? (
+                        <input
+                          type="text"
+                          value={targetGrade}
+                          onChange={(e) => setTargetGrade(e.target.value)}
+                          placeholder="e.g. Class 11, UKG, Grade 12"
+                          className="w-full bg-white border border-emerald-500 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e] shadow-2xs"
+                        />
+                      ) : (
+                        <select
+                          value={targetGrade}
+                          onChange={(e) => {
+                            if (e.target.value === '__custom__') {
+                              setIsCustomGrade(true);
+                            } else {
+                              setTargetGrade(e.target.value);
+                            }
+                          }}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                        >
+                          {gradeOptions.map(g => (
+                            <option key={g} value={g}>{g}</option>
+                          ))}
+                          <option value="__custom__">✏️ Type Custom Class Name...</option>
+                        </select>
+                      )}
                     </div>
 
+                    {/* Section Name / Letter Control */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">New Section Letter *</label>
-                      <select
-                        value={selectedSectionLetter}
-                        onChange={(e) => setSelectedSectionLetter(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-                      >
-                        <option value="Section A">Section A</option>
-                        <option value="Section B">Section B</option>
-                        <option value="Section C">Section C (Recommended)</option>
-                        <option value="Section D">Section D</option>
-                        <option value="Section E">Section E</option>
-                      </select>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700">Section Letter / Name *</label>
+                        <button
+                          type="button"
+                          onClick={() => setIsCustomSection(!isCustomSection)}
+                          className="text-[11px] font-bold text-[#1b4d3e] hover:underline flex items-center space-x-1 cursor-pointer"
+                        >
+                          <span>{isCustomSection ? '📋 Select from List' : '✏️ Type Custom Section'}</span>
+                        </button>
+                      </div>
+
+                      {isCustomSection ? (
+                        <input
+                          type="text"
+                          value={selectedSectionLetter}
+                          onChange={(e) => setSelectedSectionLetter(e.target.value)}
+                          placeholder="e.g. Section F, Rose, Beta"
+                          className="w-full bg-white border border-emerald-500 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e] shadow-2xs"
+                        />
+                      ) : (
+                        <select
+                          value={selectedSectionLetter}
+                          onChange={(e) => {
+                            if (e.target.value === '__custom__') {
+                              setIsCustomSection(true);
+                            } else {
+                              setSelectedSectionLetter(e.target.value);
+                            }
+                          }}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
+                        >
+                          <option value="Section A">Section A</option>
+                          <option value="Section B">Section B</option>
+                          <option value="Section C">Section C</option>
+                          <option value="Section D">Section D</option>
+                          <option value="Section E">Section E</option>
+                          <option value="Section F">Section F</option>
+                          <option value="__custom__">✏️ Type Custom Section Name...</option>
+                        </select>
+                      )}
                     </div>
                   </div>
 

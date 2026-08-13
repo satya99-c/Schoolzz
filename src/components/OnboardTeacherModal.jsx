@@ -129,12 +129,27 @@ export default function OnboardTeacherModal({ onClose }) {
           {/* Date of Birth & Gender */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Date of Birth *</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Date of Birth * (4-Digit Year)</label>
               <input
                 type="date"
                 required
+                min="1900-01-01"
+                max="2099-12-31"
                 value={formData.dob}
-                onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) {
+                    setFormData({ ...formData, dob: '' });
+                    return;
+                  }
+                  const parts = val.split('-');
+                  if (parts[0] && parts[0].length > 4) {
+                    parts[0] = parts[0].slice(0, 4);
+                    setFormData({ ...formData, dob: parts.join('-') });
+                  } else {
+                    setFormData({ ...formData, dob: val });
+                  }
+                }}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
               />
             </div>
@@ -156,15 +171,24 @@ export default function OnboardTeacherModal({ onClose }) {
           {/* Mobile Number & Email Id */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Number *</label>
-              <input
-                type="tel"
-                required
-                placeholder="e.g. +91 98765 43210"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#1b4d3e]"
-              />
+              <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Number * (10 Digits)</label>
+              <div className="flex items-center rounded-xl border border-slate-300 bg-slate-50 overflow-hidden focus-within:border-[#1b4d3e] focus-within:ring-1 focus-within:ring-[#1b4d3e]">
+                <span className="bg-slate-200 text-slate-800 text-xs font-black px-3 py-2.5 border-r border-slate-300 shrink-0 select-none">
+                  +91
+                </span>
+                <input
+                  type="text"
+                  required
+                  maxLength={10}
+                  placeholder="9876543210"
+                  value={formData.phone.replace('+91 ', '').replace('+91', '')}
+                  onChange={(e) => {
+                    const digitsOnly = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+                    setFormData({ ...formData, phone: digitsOnly ? `+91 ${digitsOnly}` : '' });
+                  }}
+                  className="w-full bg-transparent px-3.5 py-2.5 text-xs font-bold font-mono text-slate-900 focus:outline-none"
+                />
+              </div>
             </div>
 
             <div>
