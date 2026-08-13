@@ -185,6 +185,13 @@ export function AttendanceProvider({ children }) {
 
   // Teachers state with persistent storage
   const [teachers, setTeachers] = useState(() => {
+    if (activeSchool && activeSchool.code !== 'SCH1') {
+      try {
+        const saved = localStorage.getItem(`schoolzz_teachers_${activeSchool.code}`);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+      return [];
+    }
     try {
       const saved = localStorage.getItem('schoolzz_teachers');
       if (saved) {
@@ -197,6 +204,13 @@ export function AttendanceProvider({ children }) {
 
   // Classes state with persistent storage
   const [classes, setClasses] = useState(() => {
+    if (activeSchool && activeSchool.code !== 'SCH1') {
+      try {
+        const saved = localStorage.getItem(`schoolzz_classes_${activeSchool.code}`);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+      return [];
+    }
     try {
       const saved = localStorage.getItem('schoolzz_classes');
       if (saved) {
@@ -316,6 +330,13 @@ export function AttendanceProvider({ children }) {
   const [activeClassId, setActiveClassId] = useState('10-A');
 
   const [students, setStudents] = useState(() => {
+    if (activeSchool && activeSchool.code !== 'SCH1') {
+      try {
+        const saved = localStorage.getItem(`schoolzz_students_${activeSchool.code}`);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+      return {};
+    }
     try {
       const saved = localStorage.getItem('schoolzz_students');
       if (saved) {

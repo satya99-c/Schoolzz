@@ -33,8 +33,18 @@ export default function SchoolAdminPortal() {
   const originStr = typeof window !== 'undefined' ? window.location.origin : '';
   const shareableUrl = `${originStr}/?school=${schoolCode}`;
 
-  // Count totals
-  const totalStudentsCount = Object.values(students).reduce((acc, curr) => acc + (curr?.length || 0), 0);
+  // Filter school data strictly by active school code
+  const schoolClasses = schoolCode === 'SCH1' 
+    ? classes 
+    : classes.filter(c => c.schoolCode === schoolCode || c.school_code === schoolCode);
+
+  const schoolTeachers = schoolCode === 'SCH1'
+    ? teachers.filter(t => t.role === 'teacher')
+    : teachers.filter(t => t.role === 'teacher' && (t.schoolCode === schoolCode || t.school_code === schoolCode));
+
+  const totalStudentsCount = schoolCode === 'SCH1'
+    ? Object.values(students).reduce((acc, curr) => acc + (curr?.length || 0), 0)
+    : schoolClasses.reduce((sum, c) => sum + ((students[c.id] || []).length), 0);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareableUrl);
@@ -184,7 +194,7 @@ export default function SchoolAdminPortal() {
 
               <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-1">
                 <span className="text-[10px] font-bold uppercase text-slate-500">Active Class Sections</span>
-                <div className="text-xl font-black text-slate-900">{classes.length} Class Sections</div>
+                <div className="text-xl font-black text-slate-900">{schoolClasses.length} Class Sections</div>
               </div>
             </div>
           </div>
@@ -216,7 +226,7 @@ export default function SchoolAdminPortal() {
             {/* Teacher Roster Summary */}
             <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
               <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider block border-b border-slate-200 pb-2">
-                Current Onboarded Faculty List ({teachers.length})
+                Current Onboarded Faculty List ({schoolTeachers.length})
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {teachers.map(t => (
@@ -346,12 +356,12 @@ export default function SchoolAdminPortal() {
 
           <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
             <span className="text-[10px] text-slate-500 font-bold uppercase block">Onboarded Faculty</span>
-            <span className="font-bold text-slate-900">{teachers.length} Teachers Onboarded</span>
+            <span className="font-bold text-slate-900">{schoolTeachers.length} Teachers Onboarded</span>
           </div>
 
           <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
             <span className="text-[10px] text-slate-500 font-bold uppercase block">Active Classes</span>
-            <span className="font-bold text-slate-900">{classes.length} Active Class Sessions</span>
+            <span className="font-bold text-slate-900">{schoolClasses.length} Active Class Sessions</span>
           </div>
         </div>
       </div>
